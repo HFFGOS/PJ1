@@ -1,1264 +1,1473 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patrick — PATRICK IN INTERNET</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter+Tight:wght@300;400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --ink: #f4f2ff; --ink-2: rgba(236,232,255,.72); --ink-3: rgba(220,214,255,.5);
-            --peri: #6f78ff; --peri-2: #8d94ff; 
-            --bronze: #cda87d; 
-            --frost: #dbe4ee; 
-            --bg: #0d0830;
-            --glass: linear-gradient(160deg, rgba(110,90,240,.14), rgba(60,40,150,.08));
-            --glass-border: rgba(205,190,255,.16);
-            --line: rgba(196,178,255,.15);
-        }
-        
-        html { scroll-behavior: smooth; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter Tight', system-ui, sans-serif; background-color: var(--bg); color: var(--ink);
-            overflow-x: hidden; -webkit-font-smoothing: antialiased;
-        }
-        
-        #scene-stack { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-        .day-plate {
-            position: absolute; inset: 0; z-index: 1;
-            background-image: url('https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261104_151305_25ef1f45-0886-491c-a7a8-81e296402d5a.png&w=2400&q=85');
-            background-size: cover; background-position: center; will-change: transform, opacity;
-        }
-        #pond-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
-        #pondfx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.2s ease; }
-        
-        .violet-layer { position: absolute; inset: 0; z-index: 2; background: linear-gradient(180deg, #160c40 0%, #0f0832 50%, #0b0626 100%); opacity: 0; }
-        .night-plate {
-            position: absolute; inset: 0; z-index: 3; opacity: 0;
-            background-image: url('https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261104_151304_3b7ab857-b4c2-4f5a-8d7f-e1ec429185a5.png&w=2400&q=85');
-            background-size: cover; background-position: center;
-        }
-        .night-plate::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(180deg, rgba(13,8,40,.15) 0%, transparent 30%, rgba(13,8,40,.6) 58%, rgba(11,6,34,.94) 100%);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patrick — PATRICK IN INTERNET</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter+Tight:wght@300;400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
 
-        #koi-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
-        
-        .watcher {
-            position: fixed; right: 20px; bottom: 20px; width: 180px; height: 180px; z-index: 50; pointer-events: none;
-            opacity: 0.6; filter: drop-shadow(0 0 10px rgba(205,168,125,0.3));
-        }
+<style>
+:root {
+    --ink: #f4f2ff; --ink-2: rgba(236,232,255,.72); --ink-3: rgba(220,214,255,.5);
+    --peri: #6f78ff; --peri-2: #8d94ff; --bronze: #cda87d; --frost: #dbe4ee;
+    --bg: #0d0830;
+    --glass: linear-gradient(160deg, rgba(110,90,240,.14), rgba(60,40,150,.08));
+    --glass-border: rgba(205,190,255,.16);
+    --line: rgba(196,178,255,.15);
+}
+html { scroll-behavior: smooth; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Inter Tight', system-ui, sans-serif; background-color: var(--bg); color: var(--ink);
+    overflow-x: hidden; -webkit-font-smoothing: antialiased;
+    transition: --ink-3 1.2s;
+}
+body.cinema { --ink-3: rgba(230,225,255,.68); }
 
-        .door-knocker {
-            position: fixed; right: 40px; bottom: 40px; width: 55px; height: 55px; z-index: 100;
-            cursor: pointer; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            background: rgba(138,43,226,0.08); border: 1px solid rgba(138,43,226,0.4);
-            transition: transform 0.3s; animation: breathe-purple 10s infinite;
-        }
-        .door-knocker:hover { transform: scale(1.1); }
-        .door-knocker svg { width: 30px; height: 30px; fill: none; stroke: #b388ff; stroke-width: 1.5; }
+#scene-stack { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.day-plate {
+    position: absolute; inset: 0; z-index: 1;
+    background-image: url('https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261104_151305_25ef1f45-0886-491c-a7a8-81e296402d5a.png&w=2400&q=85');
+    background-size: cover; background-position: center; will-change: transform, opacity;
+}
+#pond-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+#pondfx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.2s ease; }
+.violet-layer { position: absolute; inset: 0; z-index: 2; background: linear-gradient(180deg, #160c40 0%, #0f0832 50%, #0b0626 100%); opacity: 0; }
+.night-plate {
+    position: absolute; inset: 0; z-index: 3; opacity: 0;
+    background-image: url('https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261104_151304_3b7ab857-b4c2-4f5a-8d7f-e1ec429185a5.png&w=2400&q=85');
+    background-size: cover; background-position: center;
+}
+.night-plate::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(13,8,40,.15) 0%, transparent 30%, rgba(13,8,40,.6) 58%, rgba(11,6,34,.94) 100%);
+}
+#cinema-tint {
+    position: absolute; inset: 0; z-index: 4;
+    pointer-events: none; opacity: 0;
+    background: radial-gradient(ellipse at center, rgba(4,2,16,.55) 30%, rgba(0,0,0,.88) 100%);
+    transition: opacity 1.2s ease;
+}
+body.cinema #cinema-tint { opacity: 1; }
+#koi-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; transition: filter 1.2s ease; }
+body.cinema #koi-canvas { filter: brightness(1.35) drop-shadow(0 0 28px rgba(170,110,255,.45)); }
 
-        @keyframes breathe-purple {
-            0%, 80%, 100% { opacity: 0.2; box-shadow: 0 0 0 rgba(138,43,226,0); }
-            90% { opacity: 1; box-shadow: 0 0 30px rgba(180,100,255,0.8), 0 0 60px rgba(138,43,226,0.4); border-color: #d1b3ff; }
-        }
+.watcher {
+    position: fixed; right: 20px; bottom: 20px; width: 180px; height: 180px; z-index: 50; pointer-events: none;
+    opacity: 0.6; filter: drop-shadow(0 0 10px rgba(205,168,125,0.3));
+    transition: opacity 1.2s ease;
+}
+body.cinema .watcher { opacity: 0.25; }
 
-        /* 🎵 迷你音乐播放器面板 */
-        .music-menu {
-            position: fixed;
-            left: 40px;
-            bottom: 100px;
-            width: 300px;
-            background: linear-gradient(180deg, rgba(30,20,78,.95), rgba(20,13,56,.98));
-            border: 1px solid rgba(205,190,255,.25);
-            border-radius: 14px;
-            padding: 16px;
-            backdrop-filter: blur(20px) saturate(1.4);
-            box-shadow: 0 20px 60px rgba(0,0,0,.6);
-            opacity: 0;
-            transform: translateY(10px) scale(0.96);
-            transform-origin: bottom left;
-            pointer-events: none;
-            transition: opacity 0.3s, transform 0.3s;
-            z-index: 101;
-        }
-        .music-menu.active {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
+.door-knocker {
+    position: fixed; right: 40px; bottom: 40px; width: 55px; height: 55px; z-index: 100;
+    cursor: pointer; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+    background: rgba(138,43,226,0.08); border: 1px solid rgba(138,43,226,0.4);
+    transition: transform 0.3s; animation: breathe-purple 10s infinite;
+}
+.door-knocker:hover { transform: scale(1.1); }
+.door-knocker svg { width: 30px; height: 30px; fill: none; stroke: #b388ff; stroke-width: 1.5; }
+@keyframes breathe-purple {
+    0%, 80%, 100% { opacity: 0.2; box-shadow: 0 0 0 rgba(138,43,226,0); }
+    90% { opacity: 1; box-shadow: 0 0 30px rgba(180,100,255,0.8), 0 0 60px rgba(138,43,226,0.4); border-color: #d1b3ff; }
+}
 
-        /* 视频容器 */
-        .music-video-wrap {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
-            margin-bottom: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        #youtube-player,
-        #youtube-player iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-        }
+.music-menu {
+    position: fixed; left: 40px; bottom: 100px; width: 300px;
+    opacity: 0; transform: translateY(10px) scale(0.96); transform-origin: bottom left;
+    pointer-events: none; transition: opacity 0.3s, transform 0.3s; z-index: 101;
+    -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+}
+.music-menu.active { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.music-menu::before {
+    content: ''; position: absolute; inset: -3px; z-index: 0;
+    border-radius: 17px; background: linear-gradient(180deg, rgba(48,34,110,.96), rgba(24,16,64,.98));
+    filter: none; transition: filter 0.6s ease; pointer-events: none;
+}
+body.cinema .music-menu::before { filter: url(#jelly); }
+@media (prefers-reduced-motion: reduce) { body.cinema .music-menu::before { filter: none; } }
 
-        /* 进度条 */
-        .timeline-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 14px;
-            font-family: 'Fira Code', monospace;
-            font-size: 10px;
-            color: var(--ink-3);
-        }
-        input[type="range"] {
-            flex: 1;
-            -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.1);
-            height: 4px;
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-            position: relative;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--peri-2);
-            box-shadow: 0 0 8px var(--peri-2);
-            transition: transform 0.1s;
-        }
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.3);
-        }
+.music-content {
+    position: relative; z-index: 1;
+    background: linear-gradient(180deg, rgba(30,20,78,.95), rgba(20,13,56,.98));
+    border: 1px solid rgba(205,190,255,.25); border-radius: 14px; padding: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.music-video-wrap { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05); }
+#youtube-player, #youtube-player iframe { width: 100%; height: 100%; border: none; display: block; }
+.timeline-container { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-family: 'Fira Code', monospace; font-size: 10px; color: var(--ink-3); }
+input[type="range"] { flex: 1; -webkit-appearance: none; background: rgba(255, 255, 255, 0.1); height: 4px; border-radius: 2px; outline: none; cursor: pointer; position: relative; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--peri-2); box-shadow: 0 0 8px var(--peri-2); transition: transform 0.1s; }
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+.song-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
+.song-list::-webkit-scrollbar { width: 4px; }
+.song-list::-webkit-scrollbar-thumb { background: rgba(205,190,255,.2); border-radius: 2px; }
+.song-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--ink-2); cursor: pointer; transition: all 0.2s; font-family: 'Inter Tight', sans-serif; font-size: 13px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.song-item:hover { background: rgba(255,255,255,0.05); }
+.song-item.active { background: rgba(110,90,240,0.18); border-color: rgba(141,148,255,0.4); color: #fff; }
+.song-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; transition: all 0.2s; }
+.song-item.active .song-indicator { background: var(--peri-2); box-shadow: 0 0 10px var(--peri-2); }
 
-        /* 歌曲列表 */
-        .song-list {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-        .song-list::-webkit-scrollbar {
-            width: 4px;
-        }
-        .song-list::-webkit-scrollbar-thumb {
-            background: rgba(205,190,255,.2);
-            border-radius: 2px;
-        }
-        
-        .song-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 10px;
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 8px;
-            color: var(--ink-2);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Inter Tight', sans-serif;
-            font-size: 13px;
-            text-align: left;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .song-item:hover {
-            background: rgba(255,255,255,0.05);
-        }
-        .song-item.active {
-            background: rgba(110,90,240,0.18);
-            border-color: rgba(141,148,255,0.4);
-            color: #fff;
-        }
-        .song-indicator {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--ink-3);
-            flex-shrink: 0;
-            transition: all 0.2s;
-        }
-        .song-item.active .song-indicator {
-            background: var(--peri-2);
-            box-shadow: 0 0 10px var(--peri-2);
-        }
+.music-player {
+    position: fixed; left: 40px; bottom: 40px; width: 50px; height: 50px; z-index: 100;
+    border-radius: 50%; display: flex; justify-content: center; align-items: center;
+    background: rgba(20, 13, 56, 0.6); border: 1px solid rgba(205, 190, 255, 0.3);
+    backdrop-filter: blur(10px); cursor: pointer; transition: all 0.3s;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.music-player:hover { background: rgba(110, 90, 240, 0.2); border-color: var(--peri-2); }
+.music-player svg { width: 20px; height: 20px; fill: var(--ink); transition: fill 0.3s; }
+.music-bars { display: none; gap: 3px; align-items: flex-end; height: 16px; pointer-events: none; }
+.music-player.playing .music-bars { display: flex; }
+.music-player.playing > svg { display: none; }
+.music-bar { width: 3px; background: var(--peri-2); border-radius: 3px; animation: bounce 1s infinite alternate ease-in-out; }
+.music-bar:nth-child(1) { height: 60%; animation-delay: 0.1s; }
+.music-bar:nth-child(2) { height: 100%; animation-delay: 0.3s; }
+.music-bar:nth-child(3) { height: 40%; animation-delay: 0s; }
+.music-bar:nth-child(4) { height: 80%; animation-delay: 0.2s; }
+@keyframes bounce { 0%, 100% { transform: scaleY(0.3); opacity: 0.5; } 100% { transform: scaleY(1); opacity: 1; } }
 
-        /* 🎵 圆形播放按钮 */
-        .music-player {
-            position: fixed; left: 40px; bottom: 40px; width: 50px; height: 50px; z-index: 100;
-            border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            background: rgba(20, 13, 56, 0.6); border: 1px solid rgba(205, 190, 255, 0.3);
-            backdrop-filter: blur(10px); cursor: pointer; transition: all 0.3s;
-            user-select: none; -webkit-user-select: none;
-        }
-        .music-player:hover { background: rgba(110, 90, 240, 0.2); border-color: var(--peri-2); }
-        .music-player svg { width: 20px; height: 20px; fill: var(--ink); transition: fill 0.3s; }
-        
-        .music-bars { display: none; gap: 3px; align-items: flex-end; height: 16px; pointer-events: none; }
-        .music-player.playing .music-bars { display: flex; }
-        .music-player.playing > svg { display: none; }
-        .music-bar {
-            width: 3px; background: var(--peri-2); border-radius: 3px;
-            animation: bounce 1s infinite alternate ease-in-out;
-        }
-        .music-bar:nth-child(1) { height: 60%; animation-delay: 0.1s; }
-        .music-bar:nth-child(2) { height: 100%; animation-delay: 0.3s; }
-        .music-bar:nth-child(3) { height: 40%; animation-delay: 0s; }
-        .music-bar:nth-child(4) { height: 80%; animation-delay: 0.2s; }
+#clock-HFFG {
+    position: fixed; top: 20px; right: 36px; z-index: 9999;
+    padding: 10px 16px; background: rgba(20, 13, 56, 0.5);
+    border: 1px solid rgba(205, 190, 255, 0.2); border-radius: 10px;
+    backdrop-filter: blur(15px); display: flex; flex-direction: column; align-items: flex-end;
+    pointer-events: none; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+.clock-time { font-family: 'Fira Code', monospace; font-size: 18px; font-weight: 500; color: var(--frost); letter-spacing: 1px; text-shadow: 0 0 10px rgba(111, 120, 255, 0.6); }
+.clock-date { font-family: 'Inter Tight', sans-serif; font-size: 10px; color: var(--bronze); letter-spacing: 1px; margin-top: 2px; }
 
-        @keyframes bounce {
-            0% { transform: scaleY(0.3); opacity: 0.5; }
-            100% { transform: scaleY(1); opacity: 1; }
-        }
+#riddle-modal {
+    position: fixed; inset: 0; z-index: 1000; background: rgba(5, 2, 20, 0.85); backdrop-filter: blur(10px);
+    display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.5s;
+}
+#riddle-modal.active { opacity: 1; pointer-events: auto; }
+.riddle-box {
+    background: linear-gradient(180deg, rgba(30,20,78,.95), rgba(20,13,56,.98)); border: 1px solid #b388ff;
+    padding: 40px 50px; border-radius: 12px; max-width: 650px; width: 90%; text-align: center;
+    box-shadow: 0 0 60px rgba(138,43,226,0.2); transform: translateY(20px); transition: transform 0.5s; position: relative;
+}
+#riddle-modal.active .riddle-box { transform: translateY(0); }
+.riddle-text { font-size: 22px; font-weight: 300; line-height: 1.6; color: var(--frost); font-family: 'Instrument Serif', serif; font-style: italic; min-height: 100px; white-space: pre-wrap; text-align: left; }
+#riddle-answer {
+    width: 100%; margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(205,168,125,0.2); border-radius: 8px; color: var(--ink);
+    font-family: 'Inter Tight', sans-serif; font-size: 15px; resize: none; outline: none; transition: border-color 0.3s;
+}
+#riddle-answer:focus { border-color: var(--bronze); background: rgba(255,255,255,0.05); }
+#riddle-answer::placeholder { color: rgba(255,255,255,0.2); }
+.close-riddle { margin-top: 25px; font-family: 'Fira Code'; font-size: 12px; color: var(--bronze); cursor: pointer; letter-spacing: 0.1em; transition: color 0.3s; }
+.close-riddle:hover { color: #fff; }
 
-        #riddle-modal {
-            position: fixed; inset: 0; z-index: 1000; background: rgba(5, 2, 20, 0.85); backdrop-filter: blur(10px);
-            display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.5s;
-        }
-        #riddle-modal.active { opacity: 1; pointer-events: auto; }
-        .riddle-box {
-            background: linear-gradient(180deg, rgba(30,20,78,.95), rgba(20,13,56,.98)); border: 1px solid #b388ff;
-            padding: 40px 50px; border-radius: 12px; max-width: 650px; width: 90%; text-align: center; 
-            box-shadow: 0 0 60px rgba(138,43,226,0.2); transform: translateY(20px); transition: transform 0.5s; position: relative;
-        }
-        #riddle-modal.active .riddle-box { transform: translateY(0); }
-        
-        .riddle-text { font-size: 22px; font-weight: 300; line-height: 1.6; color: var(--frost); font-family: 'Instrument Serif', serif; font-style: italic; min-height: 100px; white-space: pre-wrap; text-align: left;}
-        
-        #riddle-answer {
-            width: 100%; margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(205,168,125,0.2); border-radius: 8px; color: var(--ink);
-            font-family: 'Inter Tight', sans-serif; font-size: 15px; resize: none; outline: none; transition: border-color 0.3s;
-        }
-        #riddle-answer:focus { border-color: var(--bronze); background: rgba(255,255,255,0.05); }
-        #riddle-answer::placeholder { color: rgba(255,255,255,0.2); }
-        
-        .close-riddle { margin-top: 25px; font-family: 'Fira Code'; font-size: 12px; color: var(--bronze); cursor: pointer; letter-spacing: 0.1em; transition: color 0.3s; }
-        .close-riddle:hover { color: #fff; }
+main { position: relative; z-index: 10; max-width: 1440px; margin: 0 auto; padding: 0 64px; }
+nav { position: fixed; top: 24px; left: 36px; right: 32px; display: flex; justify-content: space-between; align-items: center; z-index: 100; font-size: 16px; transition: all 0.3s; }
+.logo { display: flex; align-items: center; gap: 14px; font-weight: 600; font-size: 23px; letter-spacing: -0.01em; }
+.orb { width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #fff 0 8%, #cdb8ff 22%, #8a6cff 52%, #4b3bd6 78%); box-shadow: 0 0 18px rgba(160,140,255,.55), inset -4px -5px 10px rgba(40,20,140,.5); }
+.nav-links { display: flex; gap: 24px; font-weight: 500; padding: 5px; border-radius: 12px; border: 1px solid transparent; transition: all 0.3s; position: absolute; left: 50%; transform: translateX(-50%); }
+.nav-links a { background: linear-gradient(90deg, #8ab6ff, #d4a7ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; transition: opacity 0.3s, filter 0.3s; opacity: 0.75; padding: 10px 14px; text-decoration: none; }
+.nav-links a:hover { opacity: 1; filter: drop-shadow(0 0 10px rgba(138, 182, 255, 0.6)); }
+nav.scrolled .nav-links { background: rgba(14,16,60,.55); border-color: rgba(200,200,255,.22); backdrop-filter: blur(14px) saturate(1.3); }
 
-        main { position: relative; z-index: 10; max-width: 1440px; margin: 0 auto; padding: 0 64px; }
-        nav {
-            position: fixed; top: 24px; left: 36px; right: 32px;
-            display: flex; justify-content: space-between; align-items: center; z-index: 100;
-            font-size: 16px; transition: all 0.3s;
-        }
-        .logo { display: flex; align-items: center; gap: 14px; font-weight: 600; font-size: 23px; letter-spacing: -0.01em; }
-        .orb { width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #fff 0 8%, #cdb8ff 22%, #8a6cff 52%, #4b3bd6 78%); box-shadow: 0 0 18px rgba(160,140,255,.55), inset -4px -5px 10px rgba(40,20,140,.5); }
-        .nav-links { display: flex; gap: 24px; font-weight: 500; padding: 5px; border-radius: 12px; border: 1px solid transparent; transition: all 0.3s; }
-        .nav-links a { background: linear-gradient(90deg, #8ab6ff, #d4a7ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; transition: opacity 0.3s, filter 0.3s; opacity: 0.75; padding: 10px 14px; }
-        .nav-links a:hover { opacity: 1; filter: drop-shadow(0 0 10px rgba(138, 182, 255, 0.6)); }
-        nav.scrolled .nav-links { background: rgba(14,16,60,.55); border-color: rgba(200,200,255,.22); backdrop-filter: blur(14px) saturate(1.3); }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 49px; padding: 0 24px; border-radius: 11px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.25s; border: none; text-decoration: none; }
+.btn:hover { transform: translateY(-2px); }
+.btn-fill { background: var(--peri); color: #fff; box-shadow: 0 8px 26px rgba(90,96,255,.35); }
+.btn-fill:hover { background: var(--peri-2); box-shadow: 0 10px 34px rgba(110,116,255,.5); }
+.btn-ghost { border: 1px solid rgba(230,226,255,.42); background: rgba(255,255,255,.03); color: #fff; }
+.btn-ghost:hover { background: rgba(255,255,255,.1); }
 
-        .btn { display: inline-flex; align-items: center; justify-content: center; height: 49px; padding: 0 24px; border-radius: 11px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.25s; border: none; }
-        .btn:hover { transform: translateY(-2px); }
-        .btn-fill { background: var(--peri); color: #fff; box-shadow: 0 8px 26px rgba(90,96,255,.35); }
-        .btn-fill:hover { background: var(--peri-2); box-shadow: 0 10px 34px rgba(110,116,255,.5); }
-        .btn-ghost { border: 1px solid rgba(230,226,255,.42); background: rgba(255,255,255,.03); color: #fff; }
-        .btn-ghost:hover { background: rgba(255,255,255,.1); }
-        
-        .accent { color: var(--peri-2); }
-        .serif { font-family: 'Instrument Serif', serif; font-style: italic; }
-        .mono { font-family: 'Fira Code', monospace; }
+.accent { color: var(--peri-2); }
+.serif { font-family: 'Instrument Serif', serif; font-style: italic; }
+.mono { font-family: 'Fira Code', monospace; }
 
-        .reveal { opacity: 0; transform: translateY(36px); transition: opacity 1s cubic-bezier(.2,.7,.2,1), transform 1s cubic-bezier(.2,.7,.2,1); }
-        .reveal.in { opacity: 1; transform: translateY(0); }
+.reveal { opacity: 0; transform: translateY(36px); transition: opacity 1s cubic-bezier(.2,.7,.2,1), transform 1s cubic-bezier(.2,.7,.2,1); }
+.reveal.in { opacity: 1; transform: translateY(0); }
 
-        #hero { height: 100vh; min-height: 900px; display: flex; flex-direction: column; justify-content: center; position: relative; }
-        h1 { font-size: 74px; font-weight: 300; line-height: 1.05; letter-spacing: -0.025em; margin-bottom: 20px; }
-        .subline { font-size: 20px; color: var(--ink-2); letter-spacing: -0.005em; margin-bottom: 40px; }
-        .hero-btns { display: flex; gap: 11px; }
-        
-        .scroll-card {
-            position: absolute; right: 0; bottom: 50px; width: 193px; height: 152px;
-            background: linear-gradient(160deg, rgba(120,128,255,.72), rgba(98,104,240,.62));
-            border: 1px solid rgba(210,210,255,.3); border-radius: 10px; padding: 16px 17px;
-            backdrop-filter: blur(16px); font-size: 27px; line-height: 1.18; letter-spacing: -0.01em;
-            display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.35s;
-        }
-        .scroll-card:hover { transform: translateY(4px); }
-        .scroll-arrow { align-self: flex-end; animation: bob 2.2s ease-in-out infinite; }
-        @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+#hero { height: 100vh; min-height: 900px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+h1 { font-size: 74px; font-weight: 300; line-height: 1.05; letter-spacing: -0.025em; margin-bottom: 20px; }
+.subline { font-size: 20px; color: var(--ink-2); letter-spacing: -0.005em; margin-bottom: 40px; }
+.hero-btns { display: flex; gap: 11px; }
+.scroll-card {
+    position: absolute; right: 0; bottom: 50px; width: 193px; height: 152px;
+    background: linear-gradient(160deg, rgba(120,128,255,.72), rgba(98,104,240,.62));
+    border: 1px solid rgba(210,210,255,.3); border-radius: 10px; padding: 16px 17px;
+    backdrop-filter: blur(16px); font-size: 27px; line-height: 1.18; letter-spacing: -0.01em;
+    display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.35s;
+}
+.scroll-card:hover { transform: translateY(4px); }
+.scroll-arrow { align-self: flex-end; animation: bob 2.2s ease-in-out infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
 
-        #studio { padding: 300px 0 150px; text-align: center; }
-        .section-title { font-size: 52px; font-weight: 300; line-height: 1.1; letter-spacing: -0.028em; margin: 22px auto 0; max-width: 1240px; }
-        .section-lede { font-size: 18px; line-height: 1.55; color: var(--ink-2); max-width: 600px; margin: 22px auto 0; }
-        .studio-btns { display: flex; justify-content: center; gap: 10px; margin-top: 34px; }
+#studio { padding: 300px 0 150px; text-align: center; }
+.section-title { font-size: 52px; font-weight: 300; line-height: 1.1; letter-spacing: -0.028em; margin: 22px auto 0; max-width: 1240px; }
+.section-lede { font-size: 18px; line-height: 1.55; color: var(--ink-2); max-width: 600px; margin: 22px auto 0; }
+.studio-btns { display: flex; justify-content: center; gap: 10px; margin-top: 34px; }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 1060px; margin: 72px auto 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.stat-cell { padding: 24px 20px; text-align: left; border-right: 1px solid var(--line); }
+.stat-cell:last-child { border-right: none; }
+.stat-num { font-size: 40px; font-weight: 300; letter-spacing: -0.03em; line-height: 1; }
+.stat-cap { font-size: 14px; color: var(--ink-3); line-height: 1.4; margin-top: 10px; }
 
-        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 1060px; margin: 72px auto 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-        .stat-cell { padding: 24px 20px; text-align: left; border-right: 1px solid var(--line); }
-        .stat-cell:last-child { border-right: none; }
-        .stat-num { font-size: 40px; font-weight: 300; letter-spacing: -0.03em; line-height: 1; }
-        .stat-cap { font-size: 14px; color: var(--ink-3); line-height: 1.4; margin-top: 10px; }
+.dashboard {
+    max-width: 1220px; margin: 80px auto 0; border-radius: 16px;
+    background: linear-gradient(180deg, rgba(30,20,78,.86), rgba(20,13,56,.9));
+    border: 1px solid var(--line); box-shadow: 0 50px 140px rgba(6,2,30,.7), inset 0 1px 0 rgba(255,255,255,.06);
+    text-align: left; backdrop-filter: blur(22px) saturate(1.35); overflow: hidden; font-size: 13px;
+}
+.dash-top { height: 54px; padding: 0 18px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid rgba(190,170,255,.09); }
+.dash-logo { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.dash-logo .orb { width: 20px; height: 20px; }
+.dash-breadcrumb { color: var(--ink-3); margin-left: 10px; }
+.dash-breadcrumb strong { color: var(--ink); }
+.dash-search { margin-left: auto; width: 230px; height: 32px; background: rgba(170,150,255,.07); border: 1px solid rgba(190,170,255,.1); border-radius: 8px; display: flex; align-items: center; padding: 0 10px; color: var(--ink-3); font-size: 12px; }
+.dash-body { display: grid; grid-template-columns: 196px 1fr; }
+.dash-side { padding: 14px 12px; border-right: 1px solid rgba(190,170,255,.09); }
+.side-group { font-family: 'Fira Code'; font-size: 10px; letter-spacing: .1em; color: var(--ink-3); margin: 16px 0 6px 10px; }
+.side-item { padding: 8px 10px; border-radius: 7px; color: var(--ink-2); display: flex; justify-content: space-between; margin-bottom: 2px; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.side-item:hover:not(.active) { background: rgba(255,255,255,0.05); color: #fff; }
+.side-item.active { background: rgba(140,120,255,.16); color: #fff; border-left: 2px solid var(--frost); cursor: default; }
+.dash-main { padding: 20px 22px 22px; }
+.dash-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.dash-head h3 { font-size: 21px; font-weight: 400; letter-spacing: -0.015em; color: var(--frost); }
+.chip-up { display: inline-flex; align-items: center; gap: 6px; font-family: 'Fira Code'; font-size: 11px; background: rgba(205,168,125,.1); color: var(--bronze); border: 1px solid rgba(205,168,125,.2); padding: 4px 8px; border-radius: 6px; animation: breath 3s ease-in-out infinite; }
+@keyframes breath { 0%, 100% { box-shadow: 0 0 5px rgba(205,168,125,0.1); } 50% { box-shadow: 0 0 15px rgba(205,168,125,0.4); } }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+.kpi-card { padding: 14px 16px; border-radius: 10px; background: rgba(70,52,160,.22); border: 1px solid rgba(190,170,255,.08); }
+.kpi-label { font-size: 12px; color: var(--ink-3); margin-bottom: 4px; }
+.kpi-val { font-size: 24px; font-weight: 400; letter-spacing: -0.02em; display: flex; justify-content: space-between; align-items: baseline; }
+.chart-row { display: grid; grid-template-columns: 1.75fr 1fr; gap: 12px; margin-bottom: 12px; }
+.pane { padding: 16px; border-radius: 10px; background: rgba(70,52,160,.18); border: 1px solid rgba(190,170,255,.08); }
+.pane-title { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-bottom: 16px; }
+.chart-placeholder { height: 190px; display: flex; align-items: center; justify-content: center; color: var(--ink-3); font-family: 'Fira Code'; position: relative; }
+.node-map { width: 100%; height: 100%; }
 
-        .dashboard {
-            max-width: 1220px; margin: 80px auto 0; border-radius: 16px;
-            background: linear-gradient(180deg, rgba(30,20,78,.86), rgba(20,13,56,.9));
-            border: 1px solid var(--line); box-shadow: 0 50px 140px rgba(6,2,30,.7), inset 0 1px 0 rgba(255,255,255,.06);
-            text-align: left; backdrop-filter: blur(22px) saturate(1.35); overflow: hidden; font-size: 13px;
-        }
-        .dash-top { height: 54px; padding: 0 18px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid rgba(190,170,255,.09); }
-        .dash-logo { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
-        .dash-logo .orb { width: 20px; height: 20px; }
-        .dash-breadcrumb { color: var(--ink-3); margin-left: 10px; }
-        .dash-breadcrumb strong { color: var(--ink); }
-        .dash-search { margin-left: auto; width: 230px; height: 32px; background: rgba(170,150,255,.07); border: 1px solid rgba(190,170,255,.1); border-radius: 8px; display: flex; align-items: center; padding: 0 10px; color: var(--ink-3); font-size: 12px; }
-        .dash-body { display: grid; grid-template-columns: 196px 1fr; }
-        
-        .dash-side { padding: 14px 12px; border-right: 1px solid rgba(190,170,255,.09); }
-        .side-group { font-family: 'Fira Code'; font-size: 10px; letter-spacing: .1em; color: var(--ink-3); margin: 16px 0 6px 10px; }
-        .side-item { 
-            padding: 8px 10px; border-radius: 7px; color: var(--ink-2); display: flex; justify-content: space-between; 
-            margin-bottom: 2px; cursor: pointer; transition: background 0.2s, color 0.2s;
-        }
-        .side-item:hover:not(.active) { background: rgba(255,255,255,0.05); color: #fff; }
-        .side-item.active { background: rgba(140,120,255,.16); color: #fff; border-left: 2px solid var(--frost); cursor: default; }
-        
-        .dash-main { padding: 20px 22px 22px; }
-        .dash-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-        .dash-head h3 { font-size: 21px; font-weight: 400; letter-spacing: -0.015em; color: var(--frost); }
-        
-        .chip-up { 
-            display: inline-flex; align-items: center; gap: 6px; font-family: 'Fira Code'; font-size: 11px; 
-            background: rgba(205,168,125,.1); color: var(--bronze); border: 1px solid rgba(205,168,125,.2); 
-            padding: 4px 8px; border-radius: 6px; animation: breath 3s ease-in-out infinite;
-        }
-        @keyframes breath { 0%, 100% { box-shadow: 0 0 5px rgba(205,168,125,0.1); } 50% { box-shadow: 0 0 15px rgba(205,168,125,0.4); } }
+#packs { padding: 190px 0 160px; }
+.split-row { display: grid; grid-template-columns: 1fr 520px; gap: 80px; align-items: end; margin-bottom: 72px; }
+.code-block { font-family: 'Fira Code'; font-size: 13px; line-height: 1.6; color: rgba(214,204,255,.72); height: 250px; overflow: hidden; white-space: pre; }
+.code-header, .code-footer { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); }
+.code-footer { padding-top: 10px; border-top: 1px solid var(--line); margin-top: 10px; color: var(--ink-3); }
+.packs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; padding: 30px; min-height: 400px; display: flex; flex-direction: column; backdrop-filter: blur(22px) saturate(1.35); transition: transform 0.5s, border-color 0.3s; text-decoration: none; color: inherit; cursor: pointer; }
+.card:hover { transform: translateY(-6px); border-color: var(--bronze); }
+.card.lead { background: linear-gradient(155deg, #7a72ff 0%, #6457ee 55%, #7b4fe0 100%); border-color: rgba(230,220,255,.35); box-shadow: 0 30px 80px rgba(90,70,240,.3); }
+.card-title { font-size: 32px; font-weight: 400; margin: 12px 0; letter-spacing: -0.022em; }
+.card-desc { font-size: 16.5px; color: var(--ink-2); line-height: 1.5; flex-grow: 1; }
+.card.lead .card-desc, .card.lead .card-index { color: rgba(255,255,255,.82); }
 
-        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
-        .kpi-card { padding: 14px 16px; border-radius: 10px; background: rgba(70,52,160,.22); border: 1px solid rgba(190,170,255,.08); }
-        .kpi-label { font-size: 12px; color: var(--ink-3); margin-bottom: 4px; }
-        .kpi-val { font-size: 24px; font-weight: 400; letter-spacing: -0.02em; display: flex; justify-content: space-between; align-items: baseline; }
-        .chart-row { display: grid; grid-template-columns: 1.75fr 1fr; gap: 12px; margin-bottom: 12px; }
-        .pane { padding: 16px; border-radius: 10px; background: rgba(70,52,160,.18); border: 1px solid rgba(190,170,255,.08); }
-        .pane-title { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-bottom: 16px; }
-        .chart-placeholder { height: 190px; display: flex; align-items: center; justify-content: center; color: var(--ink-3); font-family: 'Fira Code'; position: relative; }
-        .node-map { width: 100%; height: 100%; }
+#uses { padding: 150px 0 220px; position: relative; }
+.staircase { position: relative; height: 880px; margin-top: 40px; }
+.use-card { position: absolute; width: 310px; min-height: 420px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; padding: 26px; backdrop-filter: blur(22px); transition: transform 0.5s, background 0.5s, border-color 0.5s; }
+.use-card:hover { transform: translateY(-8px) !important; background: linear-gradient(160deg, rgba(120,100,255,.2), rgba(70,50,170,.14)); border-color: var(--bronze); }
+.use-card:nth-child(1) { left: 0; top: 0; }
+.use-card:nth-child(2) { left: 334px; top: 150px; }
+.use-card:nth-child(3) { left: 668px; top: 300px; }
+.use-card:nth-child(4) { left: 1002px; top: 450px; }
 
-        #packs { padding: 190px 0 160px; }
-        .split-row { display: grid; grid-template-columns: 1fr 520px; gap: 80px; align-items: end; margin-bottom: 72px; }
-        .code-block { font-family: 'Fira Code'; font-size: 13px; line-height: 1.6; color: rgba(214,204,255,.72); height: 250px; overflow: hidden; white-space: pre; }
-        .code-header, .code-footer { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); }
-        .code-footer { padding-top: 10px; border-top: 1px solid var(--line); margin-top: 10px; color: var(--ink-3); }
-        
-        .packs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .card { 
-            background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; 
-            padding: 30px; min-height: 400px; display: flex; flex-direction: column; 
-            backdrop-filter: blur(22px) saturate(1.35); transition: transform 0.5s, border-color 0.3s; 
-            text-decoration: none; color: inherit; cursor: pointer;
-        }
-        .card:hover { transform: translateY(-6px); border-color: var(--bronze); }
-        .card.lead { background: linear-gradient(155deg, #7a72ff 0%, #6457ee 55%, #7b4fe0 100%); border-color: rgba(230,220,255,.35); box-shadow: 0 30px 80px rgba(90,70,240,.3); }
-        .card-title { font-size: 32px; font-weight: 400; margin: 12px 0; letter-spacing: -0.022em; }
-        .card-desc { font-size: 16.5px; color: var(--ink-2); line-height: 1.5; flex-grow: 1; }
-        .card.lead .card-desc, .card.lead .card-index { color: rgba(255,255,255,.82); }
+@media (max-width: 1320px) and (min-width: 821px) {
+    .staircase { position: static; display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; height: auto; }
+    .use-card { position: static !important; width: 100%; min-height: auto; left: auto !important; top: auto !important; }
+}
 
-        #uses { padding: 150px 0 220px; position: relative; }
-        .staircase { position: relative; height: 880px; margin-top: 40px; }
-        .use-card { position: absolute; width: 310px; min-height: 420px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; padding: 26px; backdrop-filter: blur(22px); transition: transform 0.5s, background 0.5s, border-color 0.5s; }
-        .use-card:hover { transform: translateY(-8px) !important; background: linear-gradient(160deg, rgba(120,100,255,.2), rgba(70,50,170,.14)); border-color: var(--bronze); }
-        .use-card:nth-child(1) { left: 0; top: 0; }
-        .use-card:nth-child(2) { left: 334px; top: 150px; }
-        .use-card:nth-child(3) { left: 668px; top: 300px; }
-        .use-card:nth-child(4) { left: 1002px; top: 450px; }
+#end { min-height: 100vh; padding: 230px 0 36px; display: flex; flex-direction: column; }
+.cta-panel { max-width: 880px; margin: 0 auto; padding: 56px 60px 50px; border-radius: 18px; background: linear-gradient(180deg, rgba(80,58,180,.34), rgba(40,26,110,.3)); border: 1px solid var(--glass-border); text-align: center; backdrop-filter: blur(22px); }
+.cta-title { font-size: 72px; font-weight: 300; letter-spacing: -0.032em; line-height: 1.02; margin-top: 22px; }
+.cta-btns { display: flex; justify-content: center; gap: 11px; margin-top: 34px; }
 
-        #end { min-height: 100vh; padding: 230px 0 36px; display: flex; flex-direction: column; }
-        .cta-panel { max-width: 880px; margin: 0 auto; padding: 56px 60px 50px; border-radius: 18px; background: linear-gradient(180deg, rgba(80,58,180,.34), rgba(40,26,110,.3)); border: 1px solid var(--glass-border); text-align: center; backdrop-filter: blur(22px); }
-        .cta-title { font-size: 72px; font-weight: 300; letter-spacing: -0.032em; line-height: 1.02; margin-top: 22px; }
-        
-        footer { margin-top: auto; padding-top: 150px; }
-        .footer-grid { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 40px; padding-bottom: 40px; border-bottom: 1px solid var(--line); }
-        .footer-wordmark { font-size: 236px; font-weight: 300; line-height: 0.8; letter-spacing: -0.05em; text-align: center; margin-top: 26px; background: linear-gradient(180deg, rgba(210,195,255,.22), rgba(210,195,255,0) 85%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; user-select: none; }
+footer { margin-top: auto; padding-top: 150px; }
+.footer-grid { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 40px; padding-bottom: 40px; border-bottom: 1px solid var(--line); }
+.footer-wordmark { font-size: 236px; font-weight: 300; line-height: 0.8; letter-spacing: -0.05em; text-align: center; margin-top: 26px; background: linear-gradient(180deg, rgba(210,195,255,.22), rgba(210,195,255,0) 85%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; user-select: none; }
 
-        @media (max-width: 820px) {
-            main { padding: 0 20px; }
-            h1 { font-size: 46px; }
-            .section-title, .cta-title { font-size: 32px; }
-            .kpi-grid, .stats-row { grid-template-columns: repeat(2, 1fr); }
-            .packs-grid, .split-row, .chart-row { grid-template-columns: 1fr; gap: 32px; }
-            nav { top: 14px; left: 16px; right: 16px; }
-            .nav-links { display: none; }
-            .staircase { height: auto; display: flex; flex-direction: column; gap: 12px; }
-            .use-card { position: static; width: 100%; min-height: auto; }
-            .footer-grid { grid-template-columns: repeat(2, 1fr); }
-            .footer-wordmark { font-size: 76px; }
-            .watcher { display: none; }
-            .riddle-box { padding: 30px 20px; }
-            .riddle-text { font-size: 18px; }
-            .music-player { left: 20px; bottom: 20px; }
-            .door-knocker { right: 20px; bottom: 20px; }
-            .music-menu { left: 20px; bottom: 80px; width: 280px; }
-        }
-    </style>
+@media (max-width: 820px) {
+    main { padding: 0 20px; }
+    h1 { font-size: 46px; }
+    .section-title, .cta-title { font-size: 32px; }
+    .kpi-grid, .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .packs-grid, .split-row, .chart-row { grid-template-columns: 1fr; gap: 32px; }
+    nav { top: 14px; left: 16px; right: 16px; }
+    .nav-links { display: none; }
+    .staircase { height: auto; display: flex; flex-direction: column; gap: 12px; }
+    .use-card { position: static; width: 100%; min-height: auto; }
+    .footer-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-wordmark { font-size: 76px; }
+    .watcher { display: none; }
+    .riddle-box { padding: 30px 20px; }
+    .riddle-text { font-size: 18px; }
+    .music-player { left: 20px; bottom: 20px; }
+    .door-knocker { right: 20px; bottom: 20px; }
+    .music-menu { left: 20px; bottom: 80px; width: 280px; }
+    #clock-HFFG { top: 20px; right: 20px; padding: 8px 12px; }
+    .clock-time { font-size: 16px; }
+    .hero-btns, .cta-btns { flex-direction: column; align-items: flex-start; }
+    .cta-btns { align-items: center; }
+}
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-            }
-        }
-    </script>
+#time-greeting { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(10px); pointer-events: none; z-index: 100; opacity: 0; transition: opacity 2s ease, transform 2s ease; white-space: nowrap; }
+#time-greeting.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#greeting-text { font-family: 'Inter Tight', system-ui, sans-serif; font-weight: 300; font-size: 18px; color: var(--frost); letter-spacing: 0.15em; display: inline-block; }
+#time-greeting.show #greeting-text { animation: breathe-frost 4s ease-in-out infinite; }
+@keyframes breathe-frost { 0%, 100% { text-shadow: 0 0 10px rgba(111, 120, 255, 0.3); opacity: 0.8; } 50% { text-shadow: 0 0 25px rgba(111, 120, 255, 0.8), 0 0 10px rgba(219, 228, 238, 0.5); opacity: 1; } }
+body.cinema #time-greeting.show #greeting-text { animation: breathe-bronze 4s ease-in-out infinite; }
+@keyframes breathe-bronze { 0%, 100% { text-shadow: 0 0 10px rgba(205, 168, 125, 0.3); opacity: 0.8; } 50% { text-shadow: 0 0 25px rgba(205, 168, 125, 0.8), 0 0 10px rgba(255, 230, 200, 0.4); opacity: 1; } }
+
+.abyss-loader-wrap { display: flex; justify-content: center; align-items: center; height: 180px; width: 100%; }
+.abyss-svg { width: 200px; height: 200px; filter: drop-shadow(0 0 8px rgba(205, 168, 125, 0.6)); }
+.abyss-node { fill: var(--frost); animation: star-pulse 2s ease-in-out infinite alternate; }
+.abyss-line { stroke: var(--bronze); stroke-width: 1; fill: none; stroke-dasharray: 400; stroke-dashoffset: 400; animation: draw-line 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes star-pulse { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+@keyframes draw-line { to { stroke-dashoffset: 0; } }
+
+/* 活点地图 */
+#marauder-map {
+    position: fixed; inset: 0; z-index: 99999;
+    background-color: #d8c3a5;
+    background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+    display: flex; justify-content: center; align-items: center;
+    box-shadow: inset 0 0 150px rgba(80, 50, 20, 0.4); 
+    overflow: hidden; 
+}
+.map-text-container { text-align: center; padding: 40px; z-index: 10; transition: all 1s ease-out; }
+.map-text {
+    font-family: 'Instrument Serif', serif; font-style: italic;
+    font-size: 32px; line-height: 1.8; color: #3e2723; letter-spacing: 0.1em;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.3); white-space: pre-wrap; 
+}
+.map-text::after { content: '▌'; color: #3e2723; animation: blink 0.8s infinite; margin-left: 5px; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* 碎纸掉落与文字消散 */
+#marauder-map.shatter {
+    animation: paper-shatter 1s forwards cubic-bezier(0.5, 0, 1, 1);
+}
+#marauder-map.shatter .map-text-container {
+    animation: text-shatter 0.8s forwards cubic-bezier(0.5, 0, 1, 1);
+}
+@keyframes text-shatter {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; filter: blur(0px); }
+    100% { transform: scale(1.5) rotate(5deg); opacity: 0; filter: blur(10px); }
+}
+@keyframes paper-shatter {
+    0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+    20% { transform: scale(1.05); opacity: 1; filter: brightness(1.5) drop-shadow(0 0 20px #d8c3a5); }
+    100% { transform: scale(1.1) translateY(50px); opacity: 0; filter: brightness(0.5) blur(10px); }
+}
+
+/* 因果网盲盒 */
+#random-constellation-btn {
+    background: rgba(205, 168, 125, 0.1); border: 1px solid rgba(205, 168, 125, 0.3);
+    color: var(--bronze); font-family: 'Fira Code', monospace; font-size: 11px;
+    padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.3s;
+}
+#random-constellation-btn:hover { background: rgba(205, 168, 125, 0.25); box-shadow: 0 0 15px rgba(205, 168, 125, 0.4); color: #fff; }
+.star-node { transition: cx 0.8s cubic-bezier(0.4, 0, 0.2, 1), cy 0.8s cubic-bezier(0.4, 0, 0.2, 1), r 0.8s, fill 0.8s, opacity 0.8s; }
+.star-line { stroke: rgba(205, 168, 125, 0.4); stroke-width: 1.5; stroke-dasharray: 4; fill: none; transition: all 0.8s ease; }
+</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+}
+</script>
 </head>
 <body>
 
-    <!-- 🎼 音乐面板（长按圆形按钮展开） -->
-    <div class="music-menu" id="music-menu">
+<div id="marauder-map">
+    <div class="map-text-container">
+        <div class="map-text" id="map-text"></div>
+    </div>
+</div>
+
+<svg width="0" height="0" style="position:absolute; pointer-events:none" aria-hidden="true">
+    <defs>
+        <filter id="jelly" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="3" result="noise">
+                <animate attributeName="baseFrequency" values="0.010;0.016;0.010" dur="6s" repeatCount="indefinite"/>
+            </feTurbulence>
+            <feDisplacementMap id="jelly-disp" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+    </defs>
+</svg>
+
+<div id="clock-HFFG">
+    <div class="clock-time" id="clock-time">00:00:00</div>
+    <div class="clock-date" id="clock-date">2026.11.11</div>
+</div>
+<div id="time-greeting"><span id="greeting-text"></span></div>
+
+<div class="music-menu" id="music-menu">
+    <div class="music-content">
         <div class="music-video-wrap">
             <div id="youtube-player"></div>
         </div>
-        
         <div class="timeline-container">
             <span id="current-time">0:00</span>
             <input type="range" id="seek-bar" min="0" max="100" step="0.1" value="0">
             <span id="duration-time">0:00</span>
         </div>
+        <div class="song-list" id="song-list"></div>
+    </div>
+</div>
 
-        <div class="song-list" id="song-list">
-            <!-- 歌曲列表由 JS 动态生成 -->
+<div class="music-player" id="music-btn" title="短按播放/暂停，长按展开列表">
+    <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+    <div class="music-bars">
+        <div class="music-bar"></div>
+        <div class="music-bar"></div>
+        <div class="music-bar"></div>
+        <div class="music-bar"></div>
+    </div>
+</div>
+
+<div class="door-knocker" id="knocker">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 4v16M4 12h16"></path></svg>
+</div>
+
+<div id="riddle-modal">
+    <div class="riddle-box">
+        <div class="mono" id="modal-title" style="color:#b388ff; margin-bottom:20px; font-size:12px; letter-spacing:0.1em;">THE RAVEN'S RIDDLE</div>
+        <div class="riddle-text" id="riddle-text-content"></div>
+        <textarea id="riddle-answer" placeholder="写下你的答案... (它将被虚空吞噬)" rows="2"></textarea>
+        <div class="close-riddle" id="close-riddle">[ 卷入虚空漩涡 ]</div>
+    </div>
+</div>
+
+<svg class="watcher" viewBox="0 0 200 200">
+    <path d="M120 180 Q100 120 80 90 Q60 60 40 40 M80 90 Q90 70 110 60 M100 120 Q120 90 140 80 M60 60 Q70 40 90 20" fill="none" stroke="#1a1040" stroke-width="6" stroke-linecap="round"/>
+    <path d="M140 180 Q120 130 100 100 Q110 80 130 70 M100 100 Q80 80 60 80" fill="none" stroke="#0d0525" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="95" cy="105" r="2" fill="var(--bronze)" filter="drop-shadow(0 0 6px var(--bronze))"/>
+    <circle cx="125" cy="85" r="1.5" fill="var(--bronze)" filter="drop-shadow(0 0 4px var(--bronze))"/>
+</svg>
+
+<div id="scene-stack" aria-hidden="true">
+    <div class="day-plate" id="day-plate">
+        <video id="pond-video" muted loop playsinline preload="auto" crossorigin="anonymous" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20261104_160514_d8369d6e-d8ba-4532-9751-b32e0c8aaf75.mp4"></video>
+        <canvas id="pondfx"></canvas>
+    </div>
+    <div class="violet-layer" id="violet-layer"></div>
+    <div class="night-plate" id="night-plate"></div>
+    <div id="cinema-tint"></div>
+    <canvas id="koi-canvas"></canvas>
+</div>
+
+<nav id="nav">
+    <div class="logo"><div class="orb"></div>Patrick</div>
+    <div class="nav-links"><a href="#studio">Workspace</a><a href="#packs">Quests</a><a href="#uses">Tomes</a></div>
+</nav>
+
+<main>
+<section id="hero">
+    <h1 class="reveal">Introducing<br>Patrick</h1>
+    <p class="subline reveal">PATRICK IN GITHUB <sup>®</sup></p>
+    <div class="hero-btns reveal">
+        <a href="https://www.youtube.com/watch?v=F5GjEwI8wEA&list=RDF5GjEwI8wEA&index=1" target="_blank" class="btn btn-fill">点击开启传送门</a>
+        <a href="#studio" class="btn btn-ghost">了解我</a>
+    </div>
+    <div class="scroll-card reveal" onclick="document.getElementById('studio').scrollIntoView()">
+        <div>Scroll down<br>& discover</div>
+        <svg class="scroll-arrow" width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.6"><path d="M11 3v15M5 12l6 6 6-6"/></svg>
+    </div>
+</section>
+
+<section id="studio">
+    <h2 class="section-title reveal">探索我的 <span class="accent serif">数字世界</span>，<br>记录每一次代码与灵感。</h2>
+    <p class="section-lede reveal">这里没有商业包装，只有真实的自我。从控制台看我的日常，从项目看我的热爱。</p>
+    <div class="studio-btns reveal">
+        <a href="#packs" class="btn btn-fill">查看我的作品</a>
+        <a href="https://github.com/HFFGOS" target="_blank" class="btn btn-ghost">访问 GitHub</a>
+    </div>
+
+    <div class="stats-row reveal">
+        <div class="stat-cell"><div class="stat-num">∞</div><div class="stat-cap">可乐消耗量<br>无底洞</div></div>
+        <div class="stat-cell"><div class="stat-num">7</div><div class="stat-cap">游戏通关数<br>还在继续</div></div>
+        <div class="stat-cell"><div class="stat-num">3</div><div class="stat-cap">GitHub 提交数<br>持续更新中</div></div>
+        <div class="stat-cell"><div class="stat-num">30+</div><div class="stat-cap">实验次数<br>试错即真理</div></div>
+    </div>
+
+    <div class="dashboard reveal">
+        <div class="dash-top">
+            <div class="dash-logo"><div class="orb"></div>Patrick</div>
+            <div class="dash-breadcrumb">Workspace / <strong style="color:var(--frost);">My Life</strong></div>
+            <div class="dash-search">搜索 <span style="margin-left:auto; font-family:'Fira Code'">⌘K</span></div>
+        </div>
+        <div class="dash-body">
+            <div class="dash-side">
+                <div class="side-group">WORKSPACE</div>
+                <div class="side-item active">Dashboard</div>
+                <div class="side-item" onclick="showSealed('Quests', 'The scroll of destiny is blank. Your quests await the first stroke of ink.')">Quests <span>0</span></div>
+                <div class="side-item" onclick="showSealed('Tomes', 'The ancient knowledge is locked. The Tomes of wisdom are not yet deciphered.')">Tomes</div>
+                <div class="side-group">LIBRARY</div>
+                <div class="side-item" onclick="showSealed('Ambience', 'The halls are silent. The echoes of Ambience are still gathering.')">Ambience <span>128</span></div>
+                <div class="side-item" onclick="showSealed('Simulations', 'The sands of time are still. The Simulations have not yet begun.')">Simulations <span>42</span></div>
+            </div>
+            <div class="dash-main">
+                <div class="dash-head">
+                    <h3>当前状态</h3>
+                    <div class="chip-up">▲ 100%? 效率提升</div>
+                </div>
+                <div class="kpi-grid">
+                    <div class="kpi-card"><div class="kpi-label">心流深度</div><div class="kpi-val" style="color:var(--frost);">SLEEP</div></div>
+                    <div class="kpi-card"><div class="kpi-label">咖啡因含量 ☕</div><div class="kpi-val" style="color:var(--bronze);">High</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Bug 数量</div><div class="kpi-val" style="color:#ff8fd8">1</div></div>
+                    <div class="kpi-card"><div class="kpi-label">处于心流</div><div class="kpi-val" style="color:#7cf0bd">Yes</div></div>
+                </div>
+                <div class="chart-row">
+                    <div class="pane">
+                        <div class="pane-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>因果网 / <span id="constellation-name" style="color: var(--bronze); font-family: 'Instrument Serif'; font-style: italic; font-size: 16px;">深渊之鱼</span></span>
+                            <button id="random-constellation-btn">✦ 演化星图</button>
+                        </div>
+                        <div class="chart-placeholder" id="constellation-container"></div>
+                    </div>
+                    <div class="pane">
+                        <div class="pane-title">多维评估</div>
+                        <div class="chart-placeholder" id="radar-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="packs">
+    <div class="split-row">
+        <div class="reveal">
+            <h2 class="section-title">选择你的 <span class="accent serif">探索路线</span>，<br>见证每一次构建。</h2>
+            <p class="section-lede">从代码到现实，把脑洞变成网页，把游戏变成数据。</p>
+        </div>
+        <div class="code-block reveal">
+            <div class="code-header"><span>about_me.json</span><span>JSON</span></div>
+            <div class="code-area" id="typing-code"></div>
+            <div class="code-footer"><span>status: building</span><span>● ready</span></div>
         </div>
     </div>
 
-    <!-- 🎵 极简圆形音乐图标 -->
-    <div class="music-player" id="music-btn" title="短按播放/暂停，长按展开列表">
-        <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-        <div class="music-bars">
-            <div class="music-bar"></div>
-            <div class="music-bar"></div>
-            <div class="music-bar"></div>
-            <div class="music-bar"></div>
+    <div class="packs-grid">
+        <a href="#hero" class="card lead reveal">
+            <div class="card-index">01</div>
+            <div class="card-title">个人介绍主页</div>
+            <div class="card-desc">用 3D 技术，打造属于我自己的数字名片。</div>
+            <div class="mono" style="font-size:12px; opacity:0.8;">Current Project</div>
+        </a>
+        <div onclick="showSealed('Chronicle of Battles', 'The dice of fate are still rolling.\nThe records of this realm are yet to be inscribed.'); window.scrollTo({ top: 0, behavior: 'smooth' });" class="card reveal" style="transition-delay: 0.1s;">
+            <div class="card-index">02</div>
+            <div class="card-title">游戏战绩记录页</div>
+            <div class="card-desc">记录每一场精彩对局，分析胜率与高光时刻，数据驱动的游戏人生。</div>
+            <div class="mono" style="font-size:12px; color:var(--ink-3);">In Progress</div>
+        </div>
+        <div onclick="showSealed('Chamber of Echoes', 'The melody is still a whisper.\nThe echoes of this chamber await their tuning.'); window.scrollTo({ top: 0, behavior: 'smooth' });" class="card reveal" style="transition-delay: 0.2s;">
+            <div class="card-index">03</div>
+            <div class="card-title">歌单收藏站</div>
+            <div class="card-desc">收集赛博朋克、Lo-Fi 和游戏原声，用音乐构建我的精神角落。</div>
+            <div class="mono" style="font-size:12px; color:var(--ink-3);">Planning</div>
         </div>
     </div>
+</section>
 
-    <div class="door-knocker" id="knocker">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 4v16M4 12h16"></path></svg>
+<section id="uses">
+    <div style="text-align: right; margin-bottom: 60px;" class="reveal">
+        <h2 class="section-title">我的 <span class="accent serif">目标/梦想</span>。</h2>
+        <p class="section-lede" style="margin-left: auto;">一步一个脚印，持续点亮技能树。</p>
     </div>
+    <div class="staircase">
+        <div class="use-card reveal">
+            <div class="mono" style="color:var(--ink-3); font-size:11px;">Aspiration / 01</div>
+            <div class="card-title" style="margin-top:64px; font-size:29px;">网页基础</div>
+            <div class="card-desc" style="font-size:16px;">熟悉 CODING，正在努力攻克 GITHUB PAGES。</div>
+        </div>
+        <div class="use-card reveal" style="transition-delay: 0.06s;">
+            <div class="mono" style="color:var(--ink-3); font-size:11px;">Aspiration / 02</div>
+            <div class="card-title" style="margin-top:64px; font-size:29px;">素材整理</div>
+            <div class="card-desc" style="font-size:16px;">能收集和分类各种优良设计资源、图片素材和开源代码库。</div>
+        </div>
+        <div class="use-card reveal" style="transition-delay: 0.12s;">
+            <div class="mono" style="color:var(--ink-3); font-size:11px;">Aspiration / 03</div>
+            <div class="card-title" style="margin-top:64px; font-size:29px;">简单调试</div>
+            <div class="card-desc" style="font-size:16px;">能熟练使用浏览器开发者工具，能排查基础的前端报错。</div>
+        </div>
+        <div class="use-card reveal" style="transition-delay: 0.18s;">
+            <div class="mono" style="color:var(--ink-3); font-size:11px;">Aspiration / 04</div>
+            <div class="card-title" style="margin-top:64px; font-size:29px;">兴趣内容整理</div>
+            <div class="card-desc" style="font-size:16px;">能把游戏、音乐、二次元等兴趣转化为结构化的数字内容。</div>
+        </div>
+    </div>
+</section>
+
+<section id="end">
+    <div class="cta-panel reveal">
+        <div class="cta-title">准备好开启<br><span class="serif accent">奇妙之旅</span> 了吗？</div>
+        <p class="section-lede" style="margin: 20px auto 0;">点击下方按钮，发现一个隐藏的惊喜。或者去 GitHub 看看我的代码。</p>
+        <div class="cta-btns">
+            <a href="https://www.youtube.com/watch?v=F5GjEwI8wEA&list=RDF5GjEwI8wEA&index=1" target="_blank" class="btn btn-fill">点击开启传送门</a>
+            <a href="https://github.com/HFFGOS" target="_blank" class="btn btn-ghost">查看 GitHub</a>
+        </div>
+    </div>
+    <footer>
+        <div class="footer-grid">
+            <div>
+                <div class="logo" style="font-size:21px; margin-bottom:16px;"><div class="orb" style="width:28px; height:28px;"></div>Patrick</div>
+                <p style="font-size:15px; line-height:1.5; color:var(--ink-3); max-width:280px;">一个学生的数字空间，记录代码、游戏与热爱。</p>
+            </div>
+            <div><div class="mono" style="color:var(--ink-3); font-size:11px; margin-bottom:16px;">PRODUCT</div><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2); text-decoration:none;">Curation</a><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2); text-decoration:none;">Monetization</a></div>
+            <div><div class="mono" style="color:var(--ink-3); font-size:11px; margin-bottom:16px;">USE CASES</div><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2); text-decoration:none;">Media Agency</a><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2); text-decoration:none;">Direct Advertiser</a></div>
+            <div><div class="mono" style="color:var(--ink-3); font-size:11px; margin-bottom:16px;">CHANNELS</div><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2); text-decoration:none;">CTV</a><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2); text-decoration:none;">Display / Native</a></div>
+            <div><div class="mono" style="color:var(--ink-3); font-size:11px; margin-bottom:16px;">RESOURCES</div><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2); text-decoration:none;">Documentation</a><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2); text-decoration:none;">Contact Us</a></div>
+        </div>
+        <div class="footer-wordmark">Patrick</div>
+    </footer>
+</section>
+</main>
+
+<script>
+/* ---------- 时钟 ---------- */
+function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    const y = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    document.getElementById('clock-time').textContent = `${h}:${m}:${s}`;
+    document.getElementById('clock-date').textContent = `${y}.${mo}.${d}`;
+}
+updateClock(); setInterval(updateClock, 1000);
+
+/* ---------- 🗺️ 活点地图入场（碎纸掉落） ---------- */
+document.addEventListener("DOMContentLoaded", () => {
+    const mapScreen = document.getElementById('marauder-map');
+    const textEl = document.getElementById('map-text');
+
+    if (sessionStorage.getItem('marauder-map-shown')) {
+        if (mapScreen) mapScreen.remove();
+    } else {
+        const spellText = "我在此庄严宣誓，\n我不怀好意。\n\n(Mischief Managed.)";
+        let index = 0;
+        
+        function writeSpell() {
+            if (index < spellText.length) {
+                textEl.textContent += spellText.charAt(index);
+                index++;
+                setTimeout(writeSpell, 80); 
+            } else {
+                setTimeout(() => {
+                    // 触发碎纸掉落和文字消散
+                    mapScreen.classList.add('shatter');
+                    sessionStorage.setItem('marauder-map-shown', 'true');
+                    
+                    // 动态生成不规则破碎的纸片
+                    const rect = mapScreen.getBoundingClientRect();
+                    for (let i = 0; i < 40; i++) {
+                        const shard = document.createElement('div');
+                        const size = 80 + Math.random() * 150; // 随机大小
+                        
+                        // 随机生成不规则的多边形
+                        const p1 = Math.floor(Math.random()*20), p2 = 80+Math.floor(Math.random()*20), p3 = Math.floor(Math.random()*20);
+                        const clip = `polygon(${p1}% 0%, 100% ${p3}%, ${p2}% 100%, 0% ${p2}%)`;
+
+                        Object.assign(shard.style, {
+                            position: 'fixed',
+                            left: rect.left + Math.random() * rect.width + 'px',
+                            top: rect.top + Math.random() * rect.height + 'px',
+                            width: size + 'px', height: size + 'px',
+                            backgroundColor: '#d8c3a5',
+                            backgroundImage: 'url(https://www.transparenttextures.com/patterns/aged-paper.png)',
+                            clipPath: clip,
+                            pointerEvents: 'none', zIndex: 100000,
+                            opacity: 1
+                        });
+                        document.body.appendChild(shard);
+
+                        const dx = (Math.random() - 0.5) * 400; // 左右散开
+                        const dy = window.innerHeight; // 向下掉
+                        const rot = (Math.random() - 0.5) * 720; // 剧烈旋转
+
+                        shard.animate([
+                            { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: 1 },
+                            { transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(0.5)`, opacity: 0 }
+                        ], {
+                            duration: 1000 + Math.random() * 800,
+                            easing: 'cubic-bezier(0.4, 0.8, 0.6, 1)', // 重力加速感
+                            fill: 'forwards'
+                        }).onfinish = () => shard.remove();
+                    }
+
+                    setTimeout(() => mapScreen.remove(), 1500); 
+                }, 1000); 
+            }
+        }
+        setTimeout(writeSpell, 500);
+    }
+});
+
+/* ---------- 🌙 问候语 ---------- */
+const greetingEl = document.getElementById('time-greeting');
+const greetingTextEl = document.getElementById('greeting-text');
+const GREETINGS = {
+    morning: ["早安，晨光落在水面上，新的一天开始了。", "早安，水面很平静，我知道你来了。", "早安，今天也请慢慢来。"],
+    forenoon: ["上午好，灵感还在吗？", "上午好，我看见你在这里了。", "上午好，愿你今天心流涌动。"],
+    noon: ["中午好，记得休息一下。", "中午好，阳光正好，去吃顿饭吧。"],
+    afternoon: ["下午好，水面泛起了一点涟漪。", "下午好，不着急，时间还早。", "下午好，稍微发会儿呆也没关系。"],
+    evening: ["晚上好，乌鸦在屋顶停驻了。", "晚上好，夜色降临，这里很安静。", "晚上好，今天辛苦了。"],
+    lateNight: ["夜深了，有人醒着，就很温柔。", "夜深了，锦鲤也睡了，你呢？", "夜深了，时间好像慢了下来。"],
+    dawn: ["凌晨了，还没睡吗？", "凌晨好，这里的空气有点凉，但我看见你了。", "凌晨了，愿你今晚能做个好梦。"]
+};
+function showGreeting() {
+    const hour = new Date().getHours();
+    let pool = [];
+    if (hour >= 5 && hour < 9) pool = GREETINGS.morning;
+    else if (hour >= 9 && hour < 12) pool = GREETINGS.forenoon;
+    else if (hour >= 12 && hour < 14) pool = GREETINGS.noon;
+    else if (hour >= 14 && hour < 18) pool = GREETINGS.afternoon;
+    else if (hour >= 18 && hour < 22) pool = GREETINGS.evening;
+    else if (hour >= 22 && hour < 24) pool = GREETINGS.lateNight;
+    else pool = GREETINGS.dawn;
+    const text = pool[Math.floor(Math.random() * pool.length)];
+    greetingTextEl.textContent = text;
+    greetingEl.classList.add('show');
+    setTimeout(() => { greetingEl.classList.remove('show'); }, 15000);
+}
+window.addEventListener('load', () => { setTimeout(showGreeting, 1500); });
+
+/* ---------- 音乐 ---------- */
+const TRACKS = [
+    { name: "Ambient Flow", videoId: 'IrK3BNlHXic' },
+    { name: "GENSHIN", videoId: 'e4bptIoZFDE' },
+    { name: "Track 03", videoId: 'qZ9DaB7xRZs' },
+    { name: "Track 04", videoId: 'WsYsNoNjbaw' },
+    { name: "Track 05", videoId: 'FEhEkRMotgg' },
+    { name: "Track 06", videoId: 'RuXa_yxZMGI' }
+];
+const musicBtn = document.getElementById('music-btn');
+const musicMenu = document.getElementById('music-menu');
+const songListEl = document.getElementById('song-list');
+const seekBar = document.getElementById('seek-bar');
+const currentTimeEl = document.getElementById('current-time');
+const durationTimeEl = document.getElementById('duration-time');
+let ytPlayer = null, ytReady = false, currentTrackIndex = 0;
+let progressInterval = null, isSeeking = false;
+const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+let reducedMotion = motionQuery.matches;
+motionQuery.addEventListener('change', (e) => {
+    reducedMotion = e.matches;
+    if (reducedMotion) stopBeatPulse();
+    else if (document.body.classList.contains('cinema')) startBeatPulse();
+});
+let beatRafId = null;
+function startBeatPulse() {
+    const disp = document.getElementById('jelly-disp');
+    if (!disp) return;
+    if (reducedMotion) { disp.setAttribute('scale', '2'); return; }
+    if (beatRafId) return;
+    const start = performance.now();
+    function tick(now) {
+        if (!document.body.classList.contains('cinema')) { beatRafId = null; return; }
+        const t = (now - start) / 1000;
+        const beat = Math.pow(Math.max(0, Math.sin(t * Math.PI * 2 / 0.5)), 6);
+        disp.setAttribute('scale', (3 + beat * 6).toFixed(2));
+        beatRafId = requestAnimationFrame(tick);
+    }
+    beatRafId = requestAnimationFrame(tick);
+}
+function stopBeatPulse() {
+    if (beatRafId) cancelAnimationFrame(beatRafId);
+    beatRafId = null;
+    const disp = document.getElementById('jelly-disp');
+    if (disp) disp.setAttribute('scale', '0');
+}
+TRACKS.forEach((track, index) => {
+    const btn = document.createElement('button');
+    btn.className = `song-item ${index === 0 ? 'active' : ''}`;
+    btn.innerHTML = `<span class="song-indicator"></span><span class="song-name">${track.name}</span>`;
+    btn.addEventListener('click', () => { if (ytReady && ytPlayer) changeTrack(index); });
+    songListEl.appendChild(btn);
+});
+(function loadYouTubeAPI() {
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const first = document.getElementsByTagName('script')[0];
+    first.parentNode.insertBefore(tag, first);
+})();
+window.onYouTubeIframeAPIReady = function () {
+    ytPlayer = new YT.Player('youtube-player', {
+        width: '100%', height: '100%', videoId: TRACKS[0].videoId,
+        playerVars: { playsinline: 1, controls: 0, disablekb: 1, origin: window.location.origin },
+        events: {
+            onReady: function (event) { ytReady = true; event.target.setVolume(30); },
+            onStateChange: function (event) {
+                if (event.data === YT.PlayerState.PLAYING) {
+                    musicBtn.classList.add('playing');
+                    document.body.classList.add('cinema');   
+                    startProgressLoop();
+                    startBeatPulse();
+                } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                    musicBtn.classList.remove('playing');
+                    document.body.classList.remove('cinema'); 
+                    clearInterval(progressInterval);
+                    stopBeatPulse();
+                }
+            }
+        }
+    });
+};
+function formatTime(secs) {
+    if (isNaN(secs) || secs < 0) return "0:00";
+    const m = Math.floor(secs / 60), s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+function startProgressLoop() {
+    clearInterval(progressInterval);
+    progressInterval = setInterval(() => {
+        if (!ytReady || !ytPlayer || isSeeking) return;
+        const current = ytPlayer.getCurrentTime(), duration = ytPlayer.getDuration();
+        if (duration > 0) {
+            seekBar.value = (current / duration) * 100;
+            currentTimeEl.textContent = formatTime(current);
+            durationTimeEl.textContent = formatTime(duration);
+        }
+    }, 500);
+}
+seekBar.addEventListener('mousedown', () => isSeeking = true);
+seekBar.addEventListener('touchstart', () => isSeeking = true, {passive: true});
+seekBar.addEventListener('input', () => {
+    if (!ytReady || !ytPlayer) return;
+    const duration = ytPlayer.getDuration();
+    if (duration > 0) currentTimeEl.textContent = formatTime((seekBar.value / 100) * duration);
+});
+seekBar.addEventListener('change', () => {
+    if (!ytReady || !ytPlayer) { isSeeking = false; return; }
+    const duration = ytPlayer.getDuration();
+    if (duration > 0) ytPlayer.seekTo((seekBar.value / 100) * duration, true);
+    isSeeking = false;
+});
+function changeTrack(index) {
+    currentTrackIndex = index;
+    document.querySelectorAll('.song-item').forEach((el, i) => el.classList.toggle('active', i === index));
+    ytPlayer.loadVideoById(TRACKS[index].videoId);
+    seekBar.value = 0;
+    currentTimeEl.textContent = "0:00";
+    durationTimeEl.textContent = "0:00";
+}
+let pressTimer, isLongPress = false;
+const LONG_PRESS_DURATION = 500;
+function handlePressStart(e) {
+    if (e.type === 'mousedown' && e.button !== 0) return;
+    isLongPress = false;
+    pressTimer = setTimeout(() => { isLongPress = true; musicMenu.classList.add('active'); }, LONG_PRESS_DURATION);
+}
+function handlePressEnd() {
+    clearTimeout(pressTimer);
+    if (!isLongPress) {
+        if (!ytReady || !ytPlayer) return;
+        const state = ytPlayer.getPlayerState();
+        if (state === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+        else ytPlayer.playVideo();
+    }
+}
+musicBtn.addEventListener('mousedown', handlePressStart);
+musicBtn.addEventListener('touchstart', handlePressStart, {passive: true});
+musicBtn.addEventListener('mouseup', handlePressEnd);
+musicBtn.addEventListener('touchend', handlePressEnd);
+musicBtn.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+musicBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+document.addEventListener('click', (e) => {
+    if (!musicMenu.contains(e.target) && !musicBtn.contains(e.target)) musicMenu.classList.remove('active');
+});
+
+/* ---------- 谜题 & AI ---------- */
+const allRiddles = [
+    "如果你能回到过去改变一个遗憾，但代价是抹去你现在最珍贵的某段记忆，你换不换？",
+    "如果有一滴药水能让你忘记最痛苦的事，但会带走你一半的创造力，你喝吗？",
+    "你觉得“怀旧”是对现实的逃避，还是对自我存在的确认？",
+    "为什么人总是对“未选择的路”念念不忘？",
+    "如果时间不是一条线，而是一个面，你此刻的挣扎，是不是早就写好的结局？",
+    "你最害怕失去哪一种感官？（视觉、听觉、触觉、嗅觉、味觉）",
+    "如果你想记住一个人，你会选择留下ta的一件物品，还是一张照片，还是一段语音？",
+    "时间的流逝让你感到安全，还是恐慌？",
+    "如果未来的你，给现在的你寄来一封信，你猜里面写了什么？",
+    "你觉得人的记忆是可靠的，还是大脑每次回忆都在进行二次编造？",
+    "如果你做过的每一件坏事，都会在未来的某天完全反弹到你所爱的人身上，你还会做吗？",
+    "明天早上醒来，你发现自己被所有人遗忘了，你会去重新认识他们，还是开始新生活？",
+    "有没有哪一刻，你觉得时间为了你停滞了？",
+    "如果你只能活到明天日出，今晚你会熬夜做什么？",
+    "你觉得什么是真正的“来不及”？",
+    "如果写下的文字都会成真，但你永远无法修改，你敢动笔吗？",
+    "你觉得人类最伟大的发明，和最可怕的发明，分别是什么？",
+    "如果你能创造一种全新的颜色，你会把它涂抹在世界的什么地方？",
+    "为什么人总是热衷于破坏自己亲手建立的东西？",
+    "如果“美”本身就是一种诅咒，你还愿意拥抱它吗？",
+    "让你亲手烧掉一本你永远写不完的书，你会心疼吗？",
+    "你觉得这世上有什么东西，是“哪怕没有观众，也值得被创造出来”的？",
+    "如果有一首歌能控制听到它的人的情绪，你会用它来安抚，还是利用？",
+    "假如你是造物主，你会给这个世界设计“死亡”这个程序吗？",
+    "你觉得“完美”是存在的吗？如果存在，它是不是很无趣？",
+    "如果一刀切下去，能把你身上所有“平庸”的部分割掉，你会割吗？",
+    "面对一片废墟，你第一反应是重建，还是坐下来画下它？",
+    "你觉得“想象力”是上帝给人的礼物，还是把人逼疯的毒药？",
+    "如果全世界的书都被烧了，你脑子里只能留一本，你留哪一本？",
+    "如果给你一个绝对安全的房间和无限的食物，但永远不能和外界交流，你会待多久？",
+    "每个人都有密室，如果有一把钥匙能打开别人的密室，你最想打开谁的？",
+    "如果你发现你最好的朋友，其实是你最讨厌的那个人的另一个人格，你怎么办？",
+    "你觉得“嫉妒”是一种罪恶，还是一种无比诚实的肯定？",
+    "如果杀死一个恶人，能让世界上所有的谎言全部消失，你动手吗？",
+    "你最虚伪的一刻是什么时候？",
+    "面对一个欺辱过你的人，如果他此刻完全失去反抗能力，你真的能忍住不踩一脚吗？",
+    "如果有一种魔法，能让别人对你的痛苦感同身受，你会用吗？",
+    "为什么人总是更容易对陌生人倾诉秘密，却防备着身边的人？",
+    "如果“扮演一个好人”扮演了一辈子，这个人算不算真正的好人？",
+    "你的“自我保护机制”通常是什么？（逃避、攻击、冷漠、讨好？）",
+    "如果有一种药水，喝了就能让你变得极其合群且受欢迎，代价是失去你所有的古怪想法，你喝吗？",
+    "你最不愿意被人看穿的一点是什么？",
+    "深夜里的哪一瞬间，让你觉得自己的阴暗面在凝视你？",
+    "你觉得人类本质上，是善良的动物，还是自私的动物？",
+    "面对极其强烈的诱惑，你通常会靠什么让自己保持清醒？",
+    "如果有一个按钮，按下去你会获得无上的权力，但代价是只有你一个人知道真相，你按吗？",
+    "你是一个容易记仇的人吗？你的“复仇”通常是毁灭对方，还是冷眼旁观？",
+    "你敢在没有任何人知晓的情况下，做一件绝对违背道德的事吗？",
+    "当你发现自己变成了你曾经最讨厌的模样时，你会怎么做？",
+    "如果面具戴得太久，你怎么知道哪张脸才是你自己？",
+    "如果你爱的人是一个永远不会懂你的人，你还会爱他吗？",
+    "如果一个人能完全懂你，但前提是你要完全交出你的自由，你交吗？",
+    "你觉得“孤独”是一种惩罚，还是一种特权？",
+    "在团队里，你是那个背锅的人，还是那个负责发号施令的人？",
+    "如果背叛你，能让你的朋友摆脱绝境，你会主动教他怎么背叛你吗？",
+    "你更容易原谅一个因为自私伤害你的人，还是因为愚蠢伤害你的人？",
+    "如果有一种魔法，能替你承受所有的痛苦，但那个人会代替你死去，你会接受吗？",
+    "“爱”和“理解”，哪一个对你更重要？",
+    "为什么最亲密的人，反而经常是最刻薄的人？",
+    "如果有人在悬崖边求救，你走过去发现那是曾经霸凌过你的人，你会拉他一把吗？",
+    "你愿意为了“同频”，去迎合一个圈子吗？",
+    "怎样才算真正地“杀死”一段关系？",
+    "你相信有“绝对无私”的奉献吗？",
+    "面对一群平庸但快乐的人，你会试图唤醒他们，还是融入他们？",
+    "你觉得“信任”是建立在了解基础上的，还是建立在盲目上的？",
+    "如果你成为了这个世界的绝对法则，你的第一条法令是什么？",
+    "如果一条法律保护了恶人，你还会遵守它吗？",
+    "面对一个完全不可战胜的敌人，你是选择死守尊严，还是保存实力去当个懦夫？",
+    "如果“诚实”会导致世界大乱，你还会坚持说实话吗？",
+    "你更愿意作为一个凡人过完一生，还是作为神统治一个没有任何生命的星球？",
+    "如果有一杆绝对能称量出“真理”的天平，它会把谁的灵魂压得更重？",
+    "你觉得“公平”到底是为了保护弱者，还是为了让强者觉得体面？",
+    "如果你是唯一的清醒者，整个世界都在狂欢，你会加入他们，还是试图打破幻觉？",
+    "如果有一条规则，没人遵守，也没人惩罚，你还愿意遵守吗？",
+    "当你的利益与你坚守的真理发生冲突时，你站哪边？",
+    "你怎么判断一个规则是为了“秩序”，还是为了“压迫”？",
+    "如果你能够看一眼《死灵之书》，代价是永远被噩梦缠身，你翻不翻？",
+    "你更喜欢“聪明的疯子”，还是“愚蠢的顺从者”？",
+    "如果真理本身是模糊的，你为什么还要去寻找它？",
+    "你会为了多数人的利益，去牺牲一个什么都不懂的婴儿吗？",
+    "如果你是一扇门，你最想把什么样的人挡在门外？",
+    "如果门后空无一物，你还会敲门吗？",
+    "为什么拉文克劳的公共休息室需要回答谜题才能进，而不是像其他学院那样需要口令？",
+    "你觉得“好奇心”害死的猫，都在想什么？",
+    "如果有一面镜子，你在里面看不到自己，却能看到你最想成为的人，你会每天去照吗？",
+    "如果让你设计一道永恒的谜题，你会问什么？",
+    "你说，是迷宫困住了人，还是人走成了迷宫？",
+    "如果书页上的字每天醒来都会随机重组，你还会读那本书吗？",
+    "你觉得“渊博”这个词，是一种夸奖，还是一种诅咒？",
+    "如果你可以化作一个概念，你希望自己是什么？（比如：时间、风、沉默、遗忘……）",
+    "你觉得最高级别的“聪明”是什么？",
+    "如果智慧是一场惩罚，你还愿意清醒吗？",
+    "你相信“顿悟”吗？还是相信所有的顿悟都只是冰山一角浮出了水面？",
+    "如果一座桥只能承受你最重的那部分思想，你愿意丢掉什么来过桥？",
+    "你说，是真理更重，还是寻找真理的过程更重？",
+    "如果所有的答案都被抹去了，你还会提出问题吗？",
+    "你怎么区分“深刻的洞察”和“过度的脑补”？",
+    "当一切都失去意义的时候，是什么驱动着你继续探索？",
+    "如果有一天，你发现我（门环）只是一个被制造出来的幻象，你会觉得被欺骗了吗？",
+    "“你问完了吗？如果问完了，你准备好推开这扇门，去面对门后可能让你后悔的一切了吗？”"
+];
+const modal = document.getElementById('riddle-modal');
+const modalTitle = document.getElementById('modal-title');
+const riddleText = document.getElementById('riddle-text-content');
+const riddleAnswer = document.getElementById('riddle-answer');
+const closeRiddle = document.getElementById('close-riddle');
+const knocker = document.getElementById('knocker');
+let typingInterval;
+function typeWriter(text, element, speed = 50) {
+    clearInterval(typingInterval);
+    element.textContent = '';
+    let i = 0;
+    typingInterval = setInterval(() => {
+        if (i < text.length) { element.textContent += text.charAt(i); i++; }
+        else clearInterval(typingInterval);
+    }, speed);
+}
+window.showSealed = function(title, text) {
+    modalTitle.innerText = title.toUpperCase();
+    typeWriter(text, riddleText, 40);
+    riddleAnswer.value = '';
+    riddleAnswer.style.display = 'none';
+    modal.classList.add('active');
+};
+knocker.addEventListener('click', () => {
+    modalTitle.innerText = "THE RAVEN'S RIDDLE";
+    const randomRiddle = allRiddles[Math.floor(Math.random() * allRiddles.length)];
+    typeWriter(`“${randomRiddle}”`, riddleText, 60);
+    riddleAnswer.value = '';
+    riddleAnswer.style.display = 'block';
+    closeRiddle.style.display = 'block';
+    closeRiddle.innerText = '[ 卷入虚空漩涡 ]';
+    closeRiddle.onclick = siphonIntoVoid;
+    modal.classList.add('active');
+});
+const WORKER_URL = "https://patrickaihub.idkwhatmynameisiforgotit.workers.dev"; 
+function createRandomStarMap() {
+    const pointCount = Math.floor(Math.random() * 4) + 6; 
+    const cx = 100, cy = 90;
+    let points = [];
+    for (let i = 0; i < pointCount; i++) {
+        const angle = (Math.PI * 2 * i) / pointCount + (Math.random() * 0.5 - 0.25);
+        const r = 40 + Math.random() * 30;
+        points.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+    }
+    let svgContent = `<svg class="abyss-svg" viewBox="0 0 200 180">`;
+    points.forEach((p, i) => {
+        const next = points[(i + 1) % pointCount];
+        svgContent += `<line class="abyss-line" x1="${p.x}" y1="${p.y}" x2="${next.x}" y2="${next.y}" style="animation-delay: ${i * 0.15}s;"/>`;
+        if (Math.random() > 0.6) {
+            const randomIdx = Math.floor(Math.random() * pointCount);
+            svgContent += `<line class="abyss-line" x1="${p.x}" y1="${p.y}" x2="${points[randomIdx].x}" y2="${points[randomIdx].y}" style="stroke: rgba(205, 168, 125, 0.4); animation-delay: ${i * 0.15 + 0.2}s;"/>`;
+        }
+    });
+    points.forEach((p, i) => {
+        svgContent += `<circle class="abyss-node" cx="${p.x}" cy="${p.y}" r="2.5" style="animation-delay: ${i * 0.2}s;"/>`;
+    });
+    svgContent += `</svg>`;
+    return `<div class="abyss-loader-wrap">${svgContent}</div>`;
+}
+let currentStarMapTimer = null;
+let currentAbortController = null;
+async function askRaven(question) {
+    if (currentStarMapTimer) clearInterval(currentStarMapTimer);
+    if (currentAbortController) currentAbortController.abort();
+    currentAbortController = new AbortController();
+    riddleText.innerHTML = createRandomStarMap();
+    riddleAnswer.style.display = 'none';
+    closeRiddle.style.display = 'none';
+    currentStarMapTimer = setInterval(() => { riddleText.innerHTML = createRandomStarMap(); }, 5000);
+    try {
+        const response = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: question }),
+            signal: currentAbortController.signal
+        });
+        const data = await response.json();
+        clearInterval(currentStarMapTimer);
+        if (data.reply) {
+            riddleText.innerHTML = marked.parse(data.reply);
+            renderMathInElement(riddleText, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false
+            });
+            closeRiddle.style.display = 'block';
+            closeRiddle.innerText = '[ 离开深渊 ]';
+            closeRiddle.onclick = () => {
+                const riddleBox = document.querySelector('.riddle-box');
+                const rect = riddleBox.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                riddleBox.style.transition = 'opacity 0.1s';
+                riddleBox.style.opacity = '0';
+                closeRiddle.style.display = 'none';
+                const flash = document.createElement('div');
+                Object.assign(flash.style, {
+                    position: 'fixed', left: centerX + 'px', top: centerY + 'px',
+                    width: '20px', height: '20px', background: '#fff', borderRadius: '50%',
+                    boxShadow: '0 0 80px 40px rgba(179,136,255,0.8), 0 0 20px 10px #fff',
+                    transform: 'translate(-50%, -50%)', pointerEvents: 'none', zIndex: 2000
+                });
+                document.body.appendChild(flash);
+                flash.animate([
+                    { transform: 'translate(-50%, -50%) scale(0.5)', opacity: 1 },
+                    { transform: 'translate(-50%, -50%) scale(3)', opacity: 0 }
+                ], { duration: 600, easing: 'ease-out', fill: 'forwards' }).onfinish = () => flash.remove();
+                const shardCount = 80; 
+                const colors = ['rgba(179, 136, 255, 0.9)', 'rgba(111, 120, 255, 0.8)', 'rgba(255, 143, 216, 0.7)', 'rgba(219, 228, 238, 0.8)'];
+                const shapes = ['polygon(50% 0%, 0% 100%, 100% 100%)', 'polygon(20% 0%, 80% 0%, 100% 50%, 50% 100%, 0% 50%)', 'polygon(0 0, 100% 0, 100% 100%, 0 100%)', 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'];
+                for (let i = 0; i < shardCount; i++) {
+                    const shard = document.createElement('div');
+                    const startX = rect.left + Math.random() * rect.width;
+                    const startY = rect.top + Math.random() * rect.height;
+                    const size = 20 + Math.random() * 50; 
+                    Object.assign(shard.style, {
+                        position: 'fixed', left: startX + 'px', top: startY + 'px',
+                        width: size + 'px', height: size + 'px',
+                        background: colors[Math.floor(Math.random() * colors.length)],
+                        clipPath: shapes[Math.floor(Math.random() * shapes.length)],
+                        backdropFilter: 'blur(2px)', boxShadow: 'inset 0 0 10px rgba(255,255,255,0.6)', 
+                        pointerEvents: 'none', zIndex: 2001
+                    });
+                    document.body.appendChild(shard);
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 150 + Math.random() * 250; 
+                    const dx = Math.cos(angle) * distance;
+                    const dy = Math.sin(angle) * distance;
+                    const rotate = (Math.random() - 0.5) * 720; 
+                    shard.animate([
+                        { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: 1 },
+                        { transform: `translate(${dx}px, ${dy}px) rotate(${rotate}deg) scale(0.3)`, opacity: 0 }
+                    ], { duration: 800 + Math.random() * 600, easing: 'cubic-bezier(0.2, 0.8, 0.3, 1)', fill: 'forwards' }).onfinish = () => shard.remove();
+                }
+                setTimeout(() => {
+                    modal.classList.remove('active');
+                    riddleBox.style.opacity = '1'; 
+                    riddleBox.style.transition = ''; 
+                    riddleText.innerHTML = '';
+                    riddleAnswer.style.display = 'block';
+                    closeRiddle.innerText = '[ 卷入虚空漩涡 ]';
+                    closeRiddle.style.display = 'block';
+                    closeRiddle.onclick = siphonIntoVoid; 
+                }, 1200); 
+            }; 
+        } else {
+            riddleText.innerHTML = `深渊给出了沉默。<br><span style="font-size:12px;color:#ff8fd8;opacity:0.8;">(原因: ${data.error || '服务器未响应'})</span>`;
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            clearInterval(currentStarMapTimer);
+            riddleText.innerHTML = "连接深渊失败，请稍后再试。";
+            closeRiddle.style.display = 'block';
+            closeRiddle.innerText = '[ 离开深渊 ]';
+            closeRiddle.onclick = () => modal.classList.remove('active');
+            console.error(error);
+        }
+    }
+}
+function siphonIntoVoid() {
+    if (closeRiddle.style.display === 'none') return; 
+    clearInterval(typingInterval);
+    const answerText = riddleAnswer.value.trim();
+    let targetElement, textToSiphon, isTextarea;
+    if (answerText) {
+        targetElement = riddleAnswer; textToSiphon = answerText; isTextarea = true;
+        riddleAnswer.value = ''; riddleAnswer.blur();
+    } else {
+        targetElement = riddleText;
+        textToSiphon = riddleText.textContent || riddleText.innerText;
+        isTextarea = false;
+    }
+    if (!textToSiphon) { modal.classList.remove('active'); return; }
+    const rect = targetElement.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const computedStyle = window.getComputedStyle(targetElement);
+    const fontFamily = computedStyle.fontFamily, fontSize = computedStyle.fontSize, lineHeight = computedStyle.lineHeight;
+    let charRects = [];
+    if (isTextarea) {
+        const tempDiv = document.createElement('div');
+        Object.assign(tempDiv.style, {
+            position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
+            width: rect.width + 'px', height: rect.height + 'px',
+            font: fontSize + ' ' + fontFamily, lineHeight: lineHeight,
+            padding: computedStyle.padding, whiteSpace: 'pre-wrap', wordBreak: 'break-word', visibility: 'hidden'
+        });
+        tempDiv.textContent = textToSiphon;
+        document.body.appendChild(tempDiv);
+        const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT);
+        let node;
+        while (node = walker.nextNode()) {
+            for (let i = 0; i < node.length; i++) {
+                const char = node.textContent[i];
+                if (char.trim() === '') continue;
+                const range = document.createRange();
+                range.setStart(node, i); range.setEnd(node, i + 1);
+                const cr = range.getBoundingClientRect();
+                if (cr.width > 0 && cr.height > 0) charRects.push({ char, rect: cr });
+            }
+        }
+        tempDiv.remove();
+    } else {
+        const walker = document.createTreeWalker(targetElement, NodeFilter.SHOW_TEXT);
+        let node;
+        while (node = walker.nextNode()) {
+            for (let i = 0; i < node.length; i++) {
+                const char = node.textContent[i];
+                if (char.trim() === '') continue;
+                const range = document.createRange();
+                range.setStart(node, i); range.setEnd(node, i + 1);
+                const cr = range.getBoundingClientRect();
+                if (cr.width > 0 && cr.height > 0) charRects.push({ char, rect: cr });
+            }
+        }
+        riddleText.textContent = '';
+    }
+    const particleCount = Math.min(Math.max(textToSiphon.length * 4, 20), 150);
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        Object.assign(particle.style, {
+            position: 'fixed', left: (rect.left + Math.random() * rect.width) + 'px',
+            top: (rect.top + Math.random() * rect.height) + 'px',
+            width: (1 + Math.random() * 3) + 'px', height: (1 + Math.random() * 3) + 'px',
+            background: Math.random() > 0.5 ? '#d1b3ff' : '#6f78ff',
+            borderRadius: '50%', boxShadow: '0 0 10px #b388ff', pointerEvents: 'none', zIndex: 1999
+        });
+        document.body.appendChild(particle);
+        const dx = centerX - parseFloat(particle.style.left);
+        const dy = centerY - parseFloat(particle.style.top);
+        particle.animate([
+            { transform: 'translate(0, 0) scale(1)', opacity: 0 },
+            { opacity: 1, offset: 0.2 },
+            { transform: `translate(${dx}px, ${dy}px) scale(0)`, opacity: 0 }
+        ], { duration: 600 + Math.random() * 400, easing: 'cubic-bezier(0.5, 0, 1, 1)', fill: 'forwards' }).onfinish = () => particle.remove();
+    }
+    charRects.forEach(({ char, rect: cr }) => {
+        const span = document.createElement('span');
+        span.textContent = char;
+        Object.assign(span.style, {
+            position: 'fixed', left: cr.left + 'px', top: cr.top + 'px',
+            fontFamily, fontSize, lineHeight, pointerEvents: 'none', zIndex: 2000, color: '#e0ffff'
+        });
+        document.body.appendChild(span);
+        const dx = centerX - (cr.left + cr.width / 2);
+        const dy = centerY - (cr.top + cr.height / 2);
+        span.animate([
+            { transform: 'translate(0,0) scale(1) rotate(0deg)', color: '#e0ffff', opacity: 1, filter: 'blur(0px)' },
+            { transform: `translate(${dx * 0.4}px, ${dy * 0.4}px) scale(1.2) rotate(${Math.random() * 180}deg)`, color: '#b388ff', opacity: 0.8, filter: 'blur(1px)', offset: 0.4 },
+            { transform: `translate(${dx}px, ${dy}px) scale(0) rotate(${Math.random() * 720}deg)`, color: '#ffffff', opacity: 0, filter: 'blur(4px)' }
+        ], { duration: 700 + Math.random() * 300, easing: 'cubic-bezier(0.6, 0, 1, 1)', fill: 'forwards' }).onfinish = () => span.remove();
+    });
+    const singularity = document.createElement('div');
+    Object.assign(singularity.style, {
+        position: 'fixed', left: centerX + 'px', top: centerY + 'px',
+        width: '10px', height: '10px', background: '#fff', borderRadius: '50%',
+        boxShadow: '0 0 40px 20px rgba(180,100,255,0.8)', pointerEvents: 'none', zIndex: 2001,
+        transform: 'translate(-50%, -50%)'
+    });
+    document.body.appendChild(singularity);
+    singularity.animate([
+        { transform: 'translate(-50%,-50%) scale(0.1)', opacity: 0 },
+        { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.8 },
+        { transform: 'translate(-50%,-50%) scale(3)', opacity: 0 }
+    ], { duration: 1000, easing: 'ease-in', fill: 'forwards' }).onfinish = () => singularity.remove();
+    setTimeout(() => {
+        if (answerText) { askRaven(answerText); } else { modal.classList.remove('active'); }
+    }, 800);
+}
+closeRiddle.onclick = siphonIntoVoid;
+modal.onclick = (e) => { 
+    if (e.target === modal) {
+        if (currentStarMapTimer) clearInterval(currentStarMapTimer);
+        if (currentAbortController) currentAbortController.abort();
+        modal.classList.remove('active'); 
+    }
+};
+
+function drawRadar() {
+    const dims = ['逻辑力', '共情力', '创造力', '决断力'];
+    const vals = dims.map(() => 20 + Math.random() * 70);
+    const cx = 120, cy = 90, r = 60;
+    let svg = `<svg viewBox="0 0 240 180" width="100%" height="100%">`;
+    svg += `<polygon points="120,30 210,90 120,150 30,90" fill="none" stroke="rgba(190,170,255,0.1)" stroke-width="1"/>`;
+    svg += `<polygon points="120,50 180,90 120,130 60,90" fill="none" stroke="rgba(190,170,255,0.1)" stroke-width="1"/>`;
+    svg += `<line x1="120" y1="30" x2="120" y2="150" stroke="rgba(190,170,255,0.2)" stroke-width="1"/>`;
+    svg += `<line x1="30" y1="90" x2="210" y2="90" stroke="rgba(190,170,255,0.2)" stroke-width="1"/>`;
+    let points = [];
+    for (let i = 0; i < 4; i++) {
+        const angle = (Math.PI / 2) * i;
+        const x = cx + Math.cos(angle) * (vals[i] / 100 * r);
+        const y = cy - Math.sin(angle) * (vals[i] / 100 * r);
+        points.push(`${x},${y}`);
+    }
+    svg += `<polygon points="${points.join(' ')}" fill="rgba(205,168,125,0.2)" stroke="var(--bronze)" stroke-width="2"/>`;
+    points.forEach(p => {
+        const [x, y] = p.split(',');
+        svg += `<circle cx="${x}" cy="${y}" r="3" fill="var(--frost)" filter="drop-shadow(0 0 4px var(--frost))"/>`;
+    });
+    svg += `<text x="120" y="20" fill="var(--ink-3)" font-size="10" text-anchor="middle">逻辑力</text>`;
+    svg += `<text x="225" y="93" fill="var(--ink-3)" font-size="10" text-anchor="start">共情力</text>`;
+    svg += `<text x="120" y="165" fill="var(--ink-3)" font-size="10" text-anchor="middle">创造力</text>`;
+    svg += `<text x="15" y="93" fill="var(--ink-3)" font-size="10" text-anchor="end">决断力</text>`;
+    svg += `</svg>`;
+    document.getElementById('radar-container').innerHTML = svg;
+}
+drawRadar();
+
+/* ---------- 🌌 随机星图（因果网盲盒） ---------- */
+const constellationData = [
+    { name: "深渊之鱼", nodes: [{x:50,y:75,r:6,c:"var(--frost)"},{x:150,y:40,r:3.5,c:"var(--bronze)"},{x:150,y:110,r:4,c:"var(--bronze)"},{x:280,y:80,r:6,c:"var(--frost)"},{x:350,y:40,r:3,c:"var(--bronze)"},{x:350,y:120,r:4,c:"var(--bronze)"}], lines: [[0,1],[0,2],[1,2],[1,3],[2,3],[3,4],[3,5]] },
+    { name: "白羊座", nodes: [{x:50,y:80,r:5,c:"var(--frost)"},{x:120,y:60,r:3,c:"var(--bronze)"},{x:200,y:70,r:4,c:"var(--frost)"},{x:300,y:50,r:3,c:"var(--bronze)"},{x:350,y:90,r:4,c:"var(--frost)"}], lines: [[0,1],[1,2],[2,3],[3,4]] },
+    { name: "天鹰座", nodes: [{x:200,y:80,r:5,c:"var(--frost)"},{x:150,y:60,r:4,c:"var(--bronze)"},{x:100,y:40,r:3,c:"var(--bronze)"},{x:250,y:60,r:4,c:"var(--bronze)"},{x:300,y:40,r:3,c:"var(--bronze)"},{x:200,y:110,r:6,c:"var(--frost)"},{x:230,y:140,r:3.5,c:"var(--bronze)"}], lines: [[0,1],[1,2],[0,3],[3,4],[0,5],[5,6]] },
+    { name: "天蝎座", nodes: [{x:60,y:40,r:5,c:"var(--frost)"},{x:80,y:70,r:3,c:"var(--bronze)"},{x:120,y:90,r:3,c:"var(--bronze)"},{x:160,y:100,r:6,c:"var(--frost)"},{x:200,y:110,r:3,c:"var(--bronze)"},{x:240,y:130,r:4,c:"var(--bronze)"},{x:280,y:140,r:3,c:"var(--bronze)"},{x:320,y:110,r:3.5,c:"var(--bronze)"},{x:340,y:80,r:4,c:"var(--bronze)"}], lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8]] },
+    { name: "猎户座", nodes: [{x:80,y:40,r:5,c:"var(--frost)"},{x:120,y:60,r:3,c:"var(--bronze)"},{x:140,y:75,r:4,c:"var(--frost)"},{x:160,y:75,r:4,c:"var(--frost)"},{x:180,y:75,r:4,c:"var(--frost)"},{x:220,y:60,r:3,c:"var(--bronze)"},{x:260,y:40,r:5,c:"var(--frost)"},{x:140,y:120,r:3,c:"var(--bronze)"},{x:200,y:130,r:4,c:"var(--bronze)"}], lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[2,7],[4,8]] },
+    { name: "双子座", nodes: [{x:100,y:40,r:5,c:"var(--frost)"},{x:120,y:70,r:3,c:"var(--bronze)"},{x:140,y:110,r:4,c:"var(--frost)"},{x:200,y:50,r:3,c:"var(--bronze)"},{x:240,y:90,r:5,c:"var(--frost)"},{x:220,y:130,r:4,c:"var(--bronze)"}], lines: [[0,1],[1,2],[3,4],[4,5]] },
+    { name: "金牛座", nodes: [{x:80,y:60,r:6,c:"var(--frost)"},{x:120,y:80,r:3,c:"var(--bronze)"},{x:180,y:90,r:4,c:"var(--frost)"},{x:250,y:70,r:3,c:"var(--bronze)"},{x:300,y:50,r:4,c:"var(--frost)"},{x:320,y:100,r:3,c:"var(--bronze)"}], lines: [[0,1],[1,2],[2,3],[3,4],[2,5]] },
+    { name: "狮子座", nodes: [{x:50,y:50,r:5,c:"var(--frost)"},{x:80,y:90,r:3,c:"var(--bronze)"},{x:120,y:100,r:4,c:"var(--frost)"},{x:180,y:70,r:3,c:"var(--bronze)"},{x:240,y:60,r:5,c:"var(--frost)"},{x:300,y:100,r:4,c:"var(--bronze)"},{x:340,y:110,r:3,c:"var(--bronze)"}], lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]] },
+    { name: "天秤座", nodes: [{x:100,y:50,r:4,c:"var(--bronze)"},{x:150,y:80,r:5,c:"var(--frost)"},{x:200,y:100,r:6,c:"var(--frost)"},{x:250,y:80,r:4,c:"var(--bronze)"},{x:300,y:50,r:3,c:"var(--bronze)"}], lines: [[0,1],[1,2],[2,3],[3,4]] },
+    { name: "射手座", nodes: [{x:60,y:90,r:5,c:"var(--frost)"},{x:120,y:110,r:3,c:"var(--bronze)"},{x:180,y:80,r:4,c:"var(--frost)"},{x:220,y:50,r:3,c:"var(--bronze)"},{x:280,y:60,r:5,c:"var(--frost)"},{x:320,y:100,r:3,c:"var(--bronze)"}], lines: [[0,1],[1,2],[2,3],[3,4],[4,5]] },
+    { name: "水瓶座", nodes: [{x:80,y:60,r:4,c:"var(--frost)"},{x:120,y:80,r:3,c:"var(--bronze)"},{x:160,y:90,r:5,c:"var(--frost)"},{x:220,y:80,r:3,c:"var(--bronze)"},{x:260,y:50,r:4,c:"var(--frost)"},{x:300,y:100,r:4,c:"var(--bronze)"}], lines: [[0,1],[1,2],[2,3],[3,4],[4,5]] },
+    { name: "双鱼座", nodes: [{x:50,y:50,r:5,c:"var(--frost)"},{x:100,y:80,r:3,c:"var(--bronze)"},{x:180,y:100,r:4,c:"var(--bronze)"},{x:220,y:80,r:5,c:"var(--frost)"},{x:250,y:120,r:3,c:"var(--bronze)"},{x:280,y:80,r:5,c:"var(--frost)"}], lines: [[0,1],[1,2],[2,3],[3,4],[4,5]] },
+    { name: "展翅渡鸦", nodes: [{x:200,y:60,r:6,c:"var(--frost)"},{x:150,y:80,r:4,c:"var(--bronze)"},{x:100,y:100,r:3,c:"var(--bronze)"},{x:250,y:80,r:4,c:"var(--bronze)"},{x:300,y:100,r:3,c:"var(--bronze)"},{x:180,y:110,r:5,c:"var(--frost)"},{x:220,y:110,r:5,c:"var(--frost)"},{x:200,y:140,r:4,c:"var(--bronze)"}], lines: [[0,1],[1,2],[0,3],[3,4],[0,5],[0,6],[5,7],[6,7]] },
+    { name: "极光鹿", nodes: [{x:200,y:120,r:6,c:"var(--frost)"},{x:150,y:80,r:4,c:"var(--bronze)"},{x:100,y:40,r:3,c:"var(--bronze)"},{x:250,y:80,r:4,c:"var(--bronze)"},{x:300,y:40,r:3,c:"var(--bronze)"},{x:180,y:140,r:4,c:"var(--bronze)"},{x:220,y:140,r:4,c:"var(--bronze)"}], lines: [[0,1],[1,2],[0,3],[3,4],[0,5],[0,6]] }
+];
+
+const randomNames = [
+    "虚空水母", "星界狐", "青铜狮", "幻影猫", "暗夜枭", "深渊鲸", "星尘鸟", "极光蛇", "夜鸦", "紫电貂",
+    "幽影豹", "斑斓蝶", "星云龟", "破晓犬", "幽海马", "星河兔", "幻梦熊", "冥河狼", "苍穹隼", "紫薇鹿",
+    "星界火蜥蜴", "深渊鳐鱼", "极光飞蛾", "夜光虫", "迷雾麋鹿", "幻彩水母", "星芒孔雀", "虚空刺猬", "青铜巨蟒", "幻影天鹅",
+    "幽蓝斑马", "星海巨蟹", "极光蝾螈", "紫微星羊", "夜魇马", "星尘飞蛾", "深渊夜莺", "闪电猎豹", "幽灵蛛", "星云海豹",
+    "虚空蝶", "幻影长颈鹿", "青铜犀牛", "夜光蝙蝠", "极光海豚", "星辰野猪", "幽影变色龙", "紫电松鼠", "星芒麋鹿", "幻梦树懒",
+    "深渊鲨鱼", "虚空猫头鹰", "星空袋鼠", "极光雪貂", "夜光企鹅", "迷幻火烈鸟", "紫水晶螃蟹", "星尘蜗牛", "暗影猎犬", "幻海星",
+    "深渊章鱼", "极光蜜蜂", "星云巨鲸", "幽灵海龟", "幻影骆驼", "夜光考拉", "紫电犀牛", "星辰天鹅", "深渊灯笼鱼", "虚空飞龙",
+    "极光松鼠", "星尘大象", "暗夜豹", "幻彩锦鲤", "紫微星狮", "夜光蝎子", "极光鳄鱼", "星云猫", "幽影兔", "深渊巨口鱼",
+    "星空猛禽", "极光蜥蜴", "夜光猩猩", "紫电鹰", "迷幻狐猴", "星尘飞马", "深渊电鳗", "幻彩螳螂", "紫微星龟", "夜空独角兽",
+    "虚空之眼", "星界信天翁", "极光蜘蛛", "夜光变色龙", "幻梦刺猬", "紫电飞鱼", "星辰猎豹", "深渊水熊虫", "极光独角仙", "星尘狐"
+];
+
+for(let i=0; i<100; i++) {
+    const nodesCount = Math.floor(Math.random()*5) + 6; 
+    let nodes = [];
+    for(let j=0; j<nodesCount; j++) {
+        nodes.push({
+            x: 50 + Math.random() * 300,
+            y: 30 + Math.random() * 90,
+            r: Math.random() > 0.7 ? 5 : 3,
+            c: Math.random() > 0.7 ? "var(--frost)" : "var(--bronze)"
+        });
+    }
+    let lines = [];
+    for(let j=0; j<nodesCount; j++) {
+        if(j < nodesCount-1) lines.push([j, j+1]);
+        if(Math.random() > 0.7) lines.push([j, Math.floor(Math.random()*nodesCount)]);
+    }
+    let uniqueLines = [];
+    lines.forEach(l => {
+        if(l[0] !== l[1] && !uniqueLines.some(ul => (ul[0]===l[0]&&ul[1]===l[1])||(ul[0]===l[1]&&ul[1]===l[0]))) {
+            uniqueLines.push(l);
+        }
+    });
+    constellationData.push({
+        name: randomNames[i % randomNames.length] + (i>100 ? "·异星" : ""),
+        nodes: nodes,
+        lines: uniqueLines
+    });
+}
+
+let currentShapeIndex = 0;
+let isAnimating = false;
+
+function renderConstellation(shapeIndex) {
+    const container = document.getElementById('constellation-container');
+    const nameEl = document.getElementById('constellation-name');
+    const shape = constellationData[shapeIndex];
     
-    <div id="riddle-modal">
-        <div class="riddle-box">
-            <div class="mono" id="modal-title" style="color:#b388ff; margin-bottom:20px; font-size:12px; letter-spacing:0.1em;">THE RAVEN'S RIDDLE</div>
-            <div class="riddle-text" id="riddle-text-content"></div>
-            
-            <textarea id="riddle-answer" placeholder="写下你的答案... (它将被虚空吞噬)" rows="2"></textarea>
-            
-            <div class="close-riddle" id="close-riddle">[ 卷入虚空漩涡 ]</div>
-        </div>
-    </div>
+    nameEl.textContent = shape.name;
 
-    <svg class="watcher" viewBox="0 0 200 200">
-        <path d="M120 180 Q100 120 80 90 Q60 60 40 40 M80 90 Q90 70 110 60 M100 120 Q120 90 140 80 M60 60 Q70 40 90 20" fill="none" stroke="#1a1040" stroke-width="6" stroke-linecap="round"/>
-        <path d="M140 180 Q120 130 100 100 Q110 80 130 70 M100 100 Q80 80 60 80" fill="none" stroke="#0d0525" stroke-width="8" stroke-linecap="round"/>
-        <circle cx="95" cy="105" r="2" fill="var(--bronze)" filter="drop-shadow(0 0 6px var(--bronze))"/>
-        <circle cx="125" cy="85" r="1.5" fill="var(--bronze)" filter="drop-shadow(0 0 4px var(--bronze))"/>
-    </svg>
-
-    <div id="scene-stack" aria-hidden="true">
-        <div class="day-plate" id="day-plate">
-            <video id="pond-video" muted loop playsinline preload="auto" crossorigin="anonymous" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20261104_160514_d8369d6e-d8ba-4532-9751-b32e0c8aaf75.mp4"></video>
-            <canvas id="pondfx"></canvas>
-        </div>
-        <div class="violet-layer" id="violet-layer"></div>
-        <div class="night-plate" id="night-plate"></div>
-        <canvas id="koi-canvas"></canvas>
-    </div>
-
-    <nav id="nav">
-        <div class="logo"><div class="orb"></div>Patrick</div>
-        <div class="nav-links"><a href="#studio">Workspace</a><a href="#packs">Quests</a><a href="#uses">Tomes</a></div>
-        <a href="https://github.com/HFFGOS" target="_blank" class="btn btn-ghost" style="height: 40px; font-size: 14px;">GitHub</a>
-    </nav>
-
-    <main>
-        <section id="hero">
-            <h1 class="reveal">Introducing<br>Patrick</h1>
-            <p class="subline reveal">PATRICK IN GITHUB <sup>®</sup></p>
-            <div class="hero-btns reveal">
-                <a href="https://www.youtube.com/watch?v=F5GjEwI8wEA&list=RDF5GjEwI8wEA&index=1" target="_blank" class="btn btn-fill">点击开启传送门</a>
-                <a href="#studio" class="btn btn-ghost">了解我</a>
-            </div>
-            <div class="scroll-card reveal" onclick="document.getElementById('studio').scrollIntoView()">
-                <div>Scroll down<br>& discover</div>
-                <svg class="scroll-arrow" width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.6"><path d="M11 3v15M5 12l6 6 6-6"/></svg>
-            </div>
-        </section>
-
-        <section id="studio">
-            <h2 class="section-title reveal">探索我的 <span class="accent serif">数字世界</span>，<br>记录每一次代码与灵感。</h2>
-            <p class="section-lede reveal">这里没有商业包装，只有真实的自我。从控制台看我的日常，从项目看我的热爱。</p>
-            <div class="studio-btns reveal">
-                <a href="#packs" class="btn btn-fill">查看我的作品</a>
-                <a href="https://github.com/HFFGOS" target="_blank" class="btn btn-ghost">访问 GitHub</a>
-            </div>
-
-            <div class="stats-row reveal">
-                <div class="stat-cell"><div class="stat-num">∞</div><div class="stat-cap">可乐消耗量<br>无底洞</div></div>
-                <div class="stat-cell"><div class="stat-num">7</div><div class="stat-cap">游戏通关数<br>还在继续</div></div>
-                <div class="stat-cell"><div class="stat-num">3</div><div class="stat-cap">GitHub 提交数<br>持续更新中</div></div>
-                <div class="stat-cell"><div class="stat-num">30+</div><div class="stat-cap">实验次数<br>试错即真理</div></div>
-            </div>
-
-            <div class="dashboard reveal">
-                <div class="dash-top">
-                    <div class="dash-logo"><div class="orb"></div>Patrick</div>
-                    <div class="dash-breadcrumb">Workspace / <strong style="color:var(--frost);">My Life</strong></div>
-                    <div class="dash-search">搜索 <span style="margin-left:auto; font-family:'Fira Code'">⌘K</span></div>
-                </div>
-                <div class="dash-body">
-                    <div class="dash-side">
-                        <div class="side-group">WORKSPACE</div>
-                        <div class="side-item active">Dashboard</div>
-                        <div class="side-item" onclick="showSealed('Quests', 'The scroll of destiny is blank. Your quests await the first stroke of ink.')">Quests <span>0</span></div>
-                        <div class="side-item" onclick="showSealed('Tomes', 'The ancient knowledge is locked. The Tomes of wisdom are not yet deciphered.')">Tomes</div>
-                        <div class="side-group">LIBRARY</div>
-                        <div class="side-item" onclick="showSealed('Ambience', 'The halls are silent. The echoes of Ambience are still gathering.')">Ambience <span>128</span></div>
-                        <div class="side-item" onclick="showSealed('Simulations', 'The sands of time are still. The Simulations have not yet begun.')">Simulations <span>42</span></div>
-                    </div>
-                    <div class="dash-main">
-                        <div class="dash-head">
-                            <h3>当前状态</h3>
-                            <div class="chip-up">▲ 100%? 效率提升</div>
-                        </div>
-                        <div class="kpi-grid">
-                            <div class="kpi-card">
-                                <div class="kpi-label">心流深度</div>
-                                <div class="kpi-val" style="color:var(--frost);">SLEEP</div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-label">咖啡因含量 ☕</div>
-                                <div class="kpi-val" style="color:var(--bronze);">High</div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-label">Bug 数量</div>
-                                <div class="kpi-val" style="color:#ff8fd8">0</div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-label">处于心流</div>
-                                <div class="kpi-val" style="color:#7cf0bd">Yes</div>
-                            </div>
-                        </div>
-                        <div class="chart-row">
-                            <div class="pane">
-                                <div class="pane-title">因果网 / 知识节点</div>
-                                <div class="chart-placeholder">
-                                    <svg class="node-map" viewBox="0 0 400 150">
-                                        <path d="M50,75 L150,40 L280,80 L350,40" fill="none" stroke="rgba(205,168,125,0.3)" stroke-width="2" stroke-dasharray="4"/>
-                                        <path d="M50,75 L150,110 L280,80 L350,120" fill="none" stroke="rgba(205,168,125,0.3)" stroke-width="2" stroke-dasharray="4"/>
-                                        <path d="M150,40 L150,110 M280,80 L350,40 M280,80 L350,120" fill="none" stroke="rgba(205,168,125,0.15)" stroke-width="1"/>
-                                        <circle cx="50" cy="75" r="6" fill="var(--frost)" filter="drop-shadow(0 0 8px var(--frost))"/>
-                                        <circle cx="150" cy="40" r="4" fill="var(--bronze)"/>
-                                        <circle cx="150" cy="110" r="5" fill="var(--bronze)"/>
-                                        <circle cx="280" cy="80" r="7" fill="var(--frost)" filter="drop-shadow(0 0 8px var(--frost))"/>
-                                        <circle cx="350" cy="40" r="3" fill="var(--bronze)"/>
-                                        <circle cx="350" cy="120" r="4" fill="var(--bronze)"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="pane">
-                                <div class="pane-title">多维评估</div>
-                                <div class="chart-placeholder" id="radar-container"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="packs">
-            <div class="split-row">
-                <div class="reveal">
-                    <h2 class="section-title">选择你的 <span class="accent serif">探索路线</span>，<br>见证每一次构建。</h2>
-                    <p class="section-lede">从代码到现实，把脑洞变成网页，把游戏变成数据。</p>
-                </div>
-                <div class="code-block reveal">
-                    <div class="code-header"><span>about_me.json</span><span>JSON</span></div>
-                    <div class="code-area" id="typing-code"></div>
-                    <div class="code-footer"><span>status: building</span><span>● ready</span></div>
-                </div>
-            </div>
-
-            <div class="packs-grid">
-                <a href="#hero" class="card lead reveal">
-                    <div class="card-index">01</div>
-                    <div class="card-title">个人介绍主页</div>
-                    <div class="card-desc">用 3D 技术，打造属于我自己的数字名片。</div>
-                    <div class="mono" style="font-size:12px; opacity:0.8;">Current Project</div>
-                </a>
-                
-                <div onclick="showSealed('Chronicle of Battles', 'The dice of fate are still rolling.\nThe records of this realm are yet to be inscribed.'); window.scrollTo({ top: 0, behavior: 'smooth' });" class="card reveal" style="transition-delay: 0.1s;">
-                    <div class="card-index">02</div>
-                    <div class="card-title">游戏战绩记录页</div>
-                    <div class="card-desc">记录每一场精彩对局，分析胜率与高光时刻，数据驱动的游戏人生。</div>
-                    <div class="mono" style="font-size:12px; color:var(--ink-3);">In Progress</div>
-                </div>
-
-                <div onclick="showSealed('Chamber of Echoes', 'The melody is still a whisper.\nThe echoes of this chamber await their tuning.'); window.scrollTo({ top: 0, behavior: 'smooth' });" class="card reveal" style="transition-delay: 0.2s;">
-                    <div class="card-index">03</div>
-                    <div class="card-title">歌单收藏站</div>
-                    <div class="card-desc">收集赛博朋克、Lo-Fi 和游戏原声，用音乐构建我的精神角落。</div>
-                    <div class="mono" style="font-size:12px; color:var(--ink-3);">Planning</div>
-                </div>
-            </div>
-        </section>
-
-        <section id="uses">
-            <div style="text-align: right; margin-bottom: 60px;" class="reveal">
-                <h2 class="section-title">我的 <span class="accent serif">目标/梦想</span>。</h2>
-                <p class="section-lede" style="margin-left: auto;">一步一个脚印，持续点亮技能树。</p>
-            </div>
-            
-            <div class="staircase">
-                <div class="use-card reveal">
-                    <div class="mono" style="color:var(--ink-3); font-size:11px;">Aspiration / 01</div>
-                    <div class="card-title" style="margin-top:64px; font-size:29px;">网页基础</div>
-                    <div class="card-desc" style="font-size:16px;">熟悉 CODING，正在努力攻克 GITHUB PAGES。</div>
-                </div>
-                <div class="use-card reveal" style="transition-delay: 0.06s;">
-                    <div class="mono" style="color:var(--ink-3); font-size:11px;">Aspiration / 02</div>
-                    <div class="card-title" style="margin-top:64px; font-size:29px;">素材整理</div>
-                    <div class="card-desc" style="font-size:16px;">能收集和分类各种优良设计资源、图片素材和开源代码库。</div>
-                </div>
-                <div class="use-card reveal" style="transition-delay: 0.12s;">
-                    <div class="mono" style="color:var(--ink-3); font-size:11px;">Aspiration / 03</div>
-                    <div class="card-title" style="margin-top:64px; font-size:29px;">简单调试</div>
-                    <div class="card-desc" style="font-size:16px;">能熟练使用浏览器开发者工具，能排查基础的前端报错。</div>
-                </div>
-                <div class="use-card reveal" style="transition-delay: 0.18s;">
-                    <div class="mono" style="color:var(--ink-3); font-size:11px;">Aspiration / 04</div>
-                    <div class="card-title" style="margin-top:64px; font-size:29px;">兴趣内容整理</div>
-                    <div class="card-desc" style="font-size:16px;">能把游戏、音乐、二次元等兴趣转化为结构化的数字内容。</div>
-                </div>
-            </div>
-        </section>
-
-        <section id="end">
-            <div class="cta-panel reveal">
-                <div class="cta-title">准备好开启<br><span class="serif accent">奇妙之旅</span> 了吗？</div>
-                <p class="section-lede" style="margin: 20px auto 0;">点击下方按钮，发现一个隐藏的惊喜。或者去 GitHub 看看我的代码。</p>
-                <div class="cta-btns">
-                    <a href="https://www.youtube.com/watch?v=F5GjEwI8wEA&list=RDF5GjEwI8wEA&index=1" target="_blank" class="btn btn-fill">点击开启传送门</a>
-                    <a href="https://github.com/HFFGOS" target="_blank" class="btn btn-ghost">查看 GitHub</a>
-                </div>
-            </div>
-            <footer>
-                <div class="footer-grid">
-                    <div>
-                        <div class="logo" style="font-size:21px; margin-bottom:16px;"><div class="orb" style="width:28px; height:28px;"></div>Patrick</div>
-                        <p style="font-size:15px; line-height:1.5; color:var(--ink-3); max-width:280px;">一个学生的数字空间，记录代码、游戏与热爱。</p>
-                    </div>
-                    <div><div class="mono" style="color:var(--ink-3); font-size:11px; margin-bottom:16px;">PRODUCT</div><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2);">Curation</a><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2);">Monetization</a></div>
-                    <div><div class="mono" style="color:var(--ink-3); font-size:11px; margin-bottom:16px;">USE CASES</div><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2);">Media Agency</a><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2);">Direct Advertiser</a></div>
-                    <div><div class="mono" style="color:var(--ink-3); font-size:11px; margin-bottom:16px;">CHANNELS</div><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2);">CTV</a><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2);">Display / Native</a></div>
-                    <div><div class="mono" style="color:var(--ink-3); font-size:11px; margin-bottom:16px;">RESOURCES</div><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2);">Documentation</a><a href="#" style="display:block; margin-bottom:11px; font-size:15px; color:var(--ink-2);">Contact Us</a></div>
-                </div>
-                <div class="footer-wordmark">Patrick</div>
-            </footer>
-        </section>
-    </main>
-
-    <script>
-        // ==========================================
-        // 🎵 高级音乐系统：长按展开 + 进度条 + 歌单
-        // ==========================================
-        const TRACKS = [
-            { name: "Ambient Flow", videoId: 'IrK3BNlHXic' },
-            { name: "Track 02", videoId: 'e4bptIoZFDE' },
-            { name: "Track 03", videoId: 'qZ9DaB7xRZs' },
-            { name: "Track 04", videoId: 'aNmbrfvnkHo' }
-        ];
-
-        const musicBtn = document.getElementById('music-btn');
-        const musicMenu = document.getElementById('music-menu');
-        const songListEl = document.getElementById('song-list');
-        const seekBar = document.getElementById('seek-bar');
-        const currentTimeEl = document.getElementById('current-time');
-        const durationTimeEl = document.getElementById('duration-time');
-
-        let ytPlayer = null;
-        let ytReady = false;
-        let currentTrackIndex = 0;
-        let progressInterval = null;
-        let isSeeking = false;
-
-        // 1. 初始化歌单 UI
-        TRACKS.forEach((track, index) => {
-            const btn = document.createElement('button');
-            btn.className = `song-item ${index === 0 ? 'active' : ''}`;
-            btn.innerHTML = `
-                <span class="song-indicator"></span>
-                <span class="song-name">${track.name}</span>
-            `;
-            btn.addEventListener('click', () => {
-                if (!ytReady || !ytPlayer) return;
-                changeTrack(index);
-            });
-            songListEl.appendChild(btn);
+    const existingSvg = container.querySelector('svg');
+    
+    if (!existingSvg) {
+        // 首次渲染直接生成
+        let svg = `<svg class="node-map" viewBox="0 0 400 150">`;
+        shape.lines.forEach(([start, end]) => {
+            const p1 = shape.nodes[start];
+            const p2 = shape.nodes[end];
+            svg += `<line class="star-line" x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"/>`;
         });
+        shape.nodes.forEach((node) => {
+            const filter = node.r > 4 ? `filter="drop-shadow(0 0 8px ${node.c})"` : '';
+            svg += `<circle class="star-node" cx="${node.x}" cy="${node.y}" r="${node.r}" fill="${node.c}" ${filter}/>`;
+        });
+        svg += `</svg>`;
+        container.innerHTML = svg;
+        return;
+    }
 
-        // 2. 加载 YouTube API
-        (function loadYouTubeAPI() {
-            const tag = document.createElement('script');
-            tag.src = 'https://www.youtube.com/iframe_api';
-            const firstScript = document.getElementsByTagName('script')[0];
-            firstScript.parentNode.insertBefore(tag, firstScript);
-        })();
+    // 平滑过渡（Morphing）
+    if (isAnimating) return;
+    isAnimating = true;
 
-        window.onYouTubeIframeAPIReady = function () {
-            ytPlayer = new YT.Player('youtube-player', {
-                width: '100%',
-                height: '100%',
-                videoId: TRACKS[0].videoId,
-                playerVars: {
-                    playsinline: 1,
-                    controls: 0, // 隐藏默认控制条，使用我们的自定义进度条
-                    disablekb: 1,
-                    origin: window.location.origin
-                },
-                events: {
-                    onReady: function (event) {
-                        ytReady = true;
-                        event.target.setVolume(30);
-                    },
-                    onStateChange: function (event) {
-                        if (event.data === YT.PlayerState.PLAYING) {
-                            musicBtn.classList.add('playing');
-                            startProgressLoop();
-                        } else if (
-                            event.data === YT.PlayerState.PAUSED ||
-                            event.data === YT.PlayerState.ENDED
-                        ) {
-                            musicBtn.classList.remove('playing');
-                            clearInterval(progressInterval);
-                        }
-                    }
-                }
-            });
-        };
+    const svg = existingSvg;
+    
+    // 1. 先让所有的线淡出
+    svg.querySelectorAll('.star-line').forEach(line => line.style.opacity = 0);
 
-        // 3. 格式化时间
-        function formatTime(secs) {
-            if (isNaN(secs) || secs < 0) return "0:00";
-            const m = Math.floor(secs / 60);
-            const s = Math.floor(secs % 60);
-            return `${m}:${s < 10 ? '0' : ''}${s}`;
-        }
-
-        // 4. 进度条更新循环
-        function startProgressLoop() {
-            clearInterval(progressInterval);
-            progressInterval = setInterval(() => {
-                if (!ytReady || !ytPlayer || isSeeking) return;
-                const current = ytPlayer.getCurrentTime();
-                const duration = ytPlayer.getDuration();
-                if (duration > 0) {
-                    seekBar.value = (current / duration) * 100;
-                    currentTimeEl.textContent = formatTime(current);
-                    durationTimeEl.textContent = formatTime(duration);
-                }
-            }, 500);
-        }
-
-        // 进度条拖动事件
-        seekBar.addEventListener('mousedown', () => isSeeking = true);
-        seekBar.addEventListener('touchstart', () => isSeeking = true, {passive: true});
+    setTimeout(() => {
+        // 2. 移除所有旧线和旧点
+        svg.innerHTML = '';
         
-        seekBar.addEventListener('input', () => {
-            if (!ytReady || !ytPlayer) return;
-            const duration = ytPlayer.getDuration();
-            if (duration > 0) {
-                const seekTo = (seekBar.value / 100) * duration;
-                currentTimeEl.textContent = formatTime(seekTo);
-            }
+        // 3. 重新生成节点和线（由于我们用了 CSS transition，如果保留节点属性更新，它们会平滑移动。但线段太复杂，干脆用淡入淡出）
+        let newHtml = '';
+        shape.lines.forEach(([start, end]) => {
+            const p1 = shape.nodes[start];
+            const p2 = shape.nodes[end];
+            // 初始透明度为0，下一帧变为1
+            newHtml += `<line class="star-line" x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" style="opacity: 0;"/>`;
         });
-
-        seekBar.addEventListener('change', () => {
-            if (!ytReady || !ytPlayer) return;
-            const duration = ytPlayer.getDuration();
-            if (duration > 0) {
-                const seekTo = (seekBar.value / 100) * duration;
-                ytPlayer.seekTo(seekTo, true);
-            }
-            isSeeking = false;
+        shape.nodes.forEach((node) => {
+            const filter = node.r > 4 ? `filter="drop-shadow(0 0 8px ${node.c})"` : '';
+            // 初始透明度为0，下一帧变为1
+            newHtml += `<circle class="star-node" cx="${node.x}" cy="${node.y}" r="${node.r}" fill="${node.c}" ${filter} style="opacity: 0;"/>`;
         });
+        svg.innerHTML = newHtml;
 
-        // 5. 切换歌曲
-        function changeTrack(index) {
-            currentTrackIndex = index;
-            const track = TRACKS[index];
-            
-            // 更新 UI 状态
-            document.querySelectorAll('.song-item').forEach((el, i) => {
-                el.classList.toggle('active', i === index);
+        // 4. 触发淡入
+        requestAnimationFrame(() => {
+            svg.querySelectorAll('.star-line, .star-node').forEach(el => {
+                el.style.opacity = 1;
             });
-
-            // 重新加载视频
-            ytPlayer.loadVideoById(track.videoId);
-            seekBar.value = 0;
-            currentTimeEl.textContent = "0:00";
-            durationTimeEl.textContent = "0:00";
-        }
-
-        // 6. 长按 / 短按逻辑
-        let pressTimer;
-        let isLongPress = false;
-        const LONG_PRESS_DURATION = 500; // 0.5秒
-
-        function handlePressStart(e) {
-            if (e.type === 'mousedown' && e.button !== 0) return; // 仅限左键
-            isLongPress = false;
-            pressTimer = setTimeout(() => {
-                isLongPress = true;
-                musicMenu.classList.add('active');
-            }, LONG_PRESS_DURATION);
-        }
-
-        function handlePressEnd(e) {
-            clearTimeout(pressTimer);
-            if (!isLongPress) {
-                // 短按：播放/暂停
-                if (!ytReady || !ytPlayer) return;
-                const state = ytPlayer.getPlayerState();
-                if (state === YT.PlayerState.PLAYING) {
-                    ytPlayer.pauseVideo();
-                } else {
-                    ytPlayer.playVideo();
-                }
-            }
-        }
-
-        musicBtn.addEventListener('mousedown', handlePressStart);
-        musicBtn.addEventListener('touchstart', handlePressStart, {passive: true});
-        
-        musicBtn.addEventListener('mouseup', handlePressEnd);
-        musicBtn.addEventListener('touchend', handlePressEnd);
-        musicBtn.addEventListener('mouseleave', () => clearTimeout(pressTimer));
-
-        // 点击页面其他地方收起菜单
-        document.addEventListener('click', (e) => {
-            if (!musicMenu.contains(e.target) && !musicBtn.contains(e.target)) {
-                musicMenu.classList.remove('active');
-            }
         });
 
-        // ==========================================
-        // 1. 灵魂拷问题库 (100问)
-        // ==========================================
-        const allRiddles = [
-            "如果你能回到过去改变一个遗憾，但代价是抹去你现在最珍贵的某段记忆，你换不换？",
-            "如果有一滴药水能让你忘记最痛苦的事，但会带走你一半的创造力，你喝吗？",
-            "你觉得“怀旧”是对现实的逃避，还是对自我存在的确认？",
-            "为什么人总是对“未选择的路”念念不忘？",
-            "如果时间不是一条线，而是一个面，你此刻的挣扎，是不是早就写好的结局？",
-            "你最害怕失去哪一种感官？（视觉、听觉、触觉、嗅觉、味觉）",
-            "如果你想记住一个人，你会选择留下ta的一件物品，还是一张照片，还是一段语音？",
-            "时间的流逝让你感到安全，还是恐慌？",
-            "如果未来的你，给现在的你寄来一封信，你猜里面写了什么？",
-            "你觉得人的记忆是可靠的，还是大脑每次回忆都在进行二次编造？",
-            "如果你做过的每一件坏事，都会在未来的某天完全反弹到你所爱的人身上，你还会做吗？",
-            "明天早上醒来，你发现自己被所有人遗忘了，你会去重新认识他们，还是开始新生活？",
-            "有没有哪一刻，你觉得时间为了你停滞了？",
-            "如果你只能活到明天日出，今晚你会熬夜做什么？",
-            "你觉得什么是真正的“来不及”？",
-            "如果写下的文字都会成真，但你永远无法修改，你敢动笔吗？",
-            "你觉得人类最伟大的发明，和最可怕的发明，分别是什么？",
-            "如果你能创造一种全新的颜色，你会把它涂抹在世界的什么地方？",
-            "为什么人总是热衷于破坏自己亲手建立的东西？",
-            "如果“美”本身就是一种诅咒，你还愿意拥抱它吗？",
-            "让你亲手烧掉一本你永远写不完的书，你会心疼吗？",
-            "你觉得这世上有什么东西，是“哪怕没有观众，也值得被创造出来”的？",
-            "如果有一首歌能控制听到它的人的情绪，你会用它来安抚，还是利用？",
-            "假如你是造物主，你会给这个世界设计“死亡”这个程序吗？",
-            "你觉得“完美”是存在的吗？如果存在，它是不是很无趣？",
-            "如果一刀切下去，能把你身上所有“平庸”的部分割掉，你会割吗？",
-            "面对一片废墟，你第一反应是重建，还是坐下来画下它？",
-            "你觉得“想象力”是上帝给人的礼物，还是把人逼疯的毒药？",
-            "如果全世界的书都被烧了，你脑子里只能留一本，你留哪一本？",
-            "如果给你一个绝对安全的房间和无限的食物，但永远不能和外界交流，你会待多久？",
-            "每个人都有密室，如果有一把钥匙能打开别人的密室，你最想打开谁的？",
-            "如果你发现你最好的朋友，其实是你最讨厌的那个人的另一个人格，你怎么办？",
-            "你觉得“嫉妒”是一种罪恶，还是一种无比诚实的肯定？",
-            "如果杀死一个恶人，能让世界上所有的谎言全部消失，你动手吗？",
-            "你最虚伪的一刻是什么时候？",
-            "面对一个欺辱过你的人，如果他此刻完全失去反抗能力，你真的能忍住不踩一脚吗？",
-            "如果有一种魔法，能让别人对你的痛苦感同身受，你会用吗？",
-            "为什么人总是更容易对陌生人倾诉秘密，却防备着身边的人？",
-            "如果“扮演一个好人”扮演了一辈子，这个人算不算真正的好人？",
-            "你的“自我保护机制”通常是什么？（逃避、攻击、冷漠、讨好？）",
-            "如果有一种药水，喝了就能让你变得极其合群且受欢迎，代价是失去你所有的古怪想法，你喝吗？",
-            "你最不愿意被人看穿的一点是什么？",
-            "深夜里的哪一瞬间，让你觉得自己的阴暗面在凝视你？",
-            "你觉得人类本质上，是善良的动物，还是自私的动物？",
-            "面对极其强烈的诱惑，你通常会靠什么让自己保持清醒？",
-            "如果有一个按钮，按下去你会获得无上的权力，但代价是只有你一个人知道真相，你按吗？",
-            "你是一个容易记仇的人吗？你的“复仇”通常是毁灭对方，还是冷眼旁观？",
-            "你敢在没有任何人知晓的情况下，做一件绝对违背道德的事吗？",
-            "当你发现自己变成了你曾经最讨厌的模样时，你会怎么做？",
-            "如果面具戴得太久，你怎么知道哪张脸才是你自己？",
-            "如果你爱的人是一个永远不会懂你的人，你还会爱他吗？",
-            "如果一个人能完全懂你，但前提是你要完全交出你的自由，你交吗？",
-            "你觉得“孤独”是一种惩罚，还是一种特权？",
-            "在团队里，你是那个背锅的人，还是那个负责发号施令的人？",
-            "如果背叛你，能让你的朋友摆脱绝境，你会主动教他怎么背叛你吗？",
-            "你更容易原谅一个因为自私伤害你的人，还是因为愚蠢伤害你的人？",
-            "如果有一种魔法，能替你承受所有的痛苦，但那个人会代替你死去，你会接受吗？",
-            "“爱”和“理解”，哪一个对你更重要？",
-            "为什么最亲密的人，反而经常是最刻薄的人？",
-            "如果有人在悬崖边求救，你走过去发现那是曾经霸凌过你的人，你会拉他一把吗？",
-            "你愿意为了“同频”，去迎合一个圈子吗？",
-            "怎样才算真正地“杀死”一段关系？",
-            "你相信有“绝对无私”的奉献吗？",
-            "面对一群平庸但快乐的人，你会试图唤醒他们，还是融入他们？",
-            "你觉得“信任”是建立在了解基础上的，还是建立在盲目上的？",
-            "如果你成为了这个世界的绝对法则，你的第一条法令是什么？",
-            "如果一条法律保护了恶人，你还会遵守它吗？",
-            "面对一个完全不可战胜的敌人，你是选择死守尊严，还是保存实力去当个懦夫？",
-            "如果“诚实”会导致世界大乱，你还会坚持说实话吗？",
-            "你更愿意作为一个凡人过完一生，还是作为神统治一个没有任何生命的星球？",
-            "如果有一杆绝对能称量出“真理”的天平，它会把谁的灵魂压得更重？",
-            "你觉得“公平”到底是为了保护弱者，还是为了让强者觉得体面？",
-            "如果你是唯一的清醒者，整个世界都在狂欢，你会加入他们，还是试图打破幻觉？",
-            "如果有一条规则，没人遵守，也没人惩罚，你还愿意遵守吗？",
-            "当你的利益与你坚守的真理发生冲突时，你站哪边？",
-            "你怎么判断一个规则是为了“秩序”，还是为了“压迫”？",
-            "如果你能够看一眼《死灵之书》，代价是永远被噩梦缠身，你翻不翻？",
-            "你更喜欢“聪明的疯子”，还是“愚蠢的顺从者”？",
-            "如果真理本身是模糊的，你为什么还要去寻找它？",
-            "你会为了多数人的利益，去牺牲一个什么都不懂的婴儿吗？",
-            "如果你是一扇门，你最想把什么样的人挡在门外？",
-            "如果门后空无一物，你还会敲门吗？",
-            "为什么拉文克劳的公共休息室需要回答谜题才能进，而不是像其他学院那样需要口令？",
-            "你觉得“好奇心”害死的猫，都在想什么？",
-            "如果有一面镜子，你在里面看不到自己，却能看到你最想成为的人，你会每天去照吗？",
-            "如果让你设计一道永恒的谜题，你会问什么？",
-            "你说，是迷宫困住了人，还是人走成了迷宫？",
-            "如果书页上的字每天醒来都会随机重组，你还会读那本书吗？",
-            "你觉得“渊博”这个词，是一种夸奖，还是一种诅咒？",
-            "如果你可以化作一个概念，你希望自己是什么？（比如：时间、风、沉默、遗忘……）",
-            "你觉得最高级别的“聪明”是什么？",
-            "如果智慧是一场惩罚，你还愿意清醒吗？",
-            "你相信“顿悟”吗？还是相信所有的顿悟都只是冰山一角浮出了水面？",
-            "如果一座桥只能承受你最重的那部分思想，你愿意丢掉什么来过桥？",
-            "你说，是真理更重，还是寻找真理的过程更重？",
-            "如果所有的答案都被抹去了，你还会提出问题吗？",
-            "你怎么区分“深刻的洞察”和“过度的脑补”？",
-            "当一切都失去意义的时候，是什么驱动着你继续探索？",
-            "如果有一天，你发现我（门环）只是一个被制造出来的幻象，你会觉得被欺骗了吗？",
-            "“你问完了吗？如果问完了，你准备好推开这扇门，去面对门后可能让你后悔的一切了吗？”"
-        ];
+        setTimeout(() => { isAnimating = false; }, 850); // 等待动画结束
 
-        const modal = document.getElementById('riddle-modal');
-        const modalTitle = document.getElementById('modal-title');
-        const riddleText = document.getElementById('riddle-text-content');
-        const riddleAnswer = document.getElementById('riddle-answer');
-        const closeRiddle = document.getElementById('close-riddle');
-        const knocker = document.getElementById('knocker');
-        
-        let typingInterval;
+    }, 400); // 等旧线淡出
+}
 
-        function typeWriter(text, element, speed = 50) {
-            clearInterval(typingInterval);
-            element.textContent = '';
-            let i = 0;
-            typingInterval = setInterval(() => {
-                if (i < text.length) {
-                    element.textContent += text.charAt(i);
-                    i++;
-                } else {
-                    clearInterval(typingInterval);
-                }
-            }, speed);
-        }
+currentShapeIndex = Math.floor(Math.random() * constellationData.length);
+renderConstellation(currentShapeIndex);
 
-        window.showSealed = function(title, text) {
-            modalTitle.innerText = title.toUpperCase();
-            typeWriter(text, riddleText, 40);
-            riddleAnswer.value = ''; 
-            riddleAnswer.style.display = 'none'; 
-            modal.classList.add('active');
-        };
+document.getElementById('random-constellation-btn').addEventListener('click', () => {
+    if (isAnimating) return;
+    let nextIndex = currentShapeIndex;
+    while (nextIndex === currentShapeIndex) {
+        nextIndex = Math.floor(Math.random() * constellationData.length);
+    }
+    currentShapeIndex = nextIndex;
+    renderConstellation(currentShapeIndex);
+});
 
-        knocker.addEventListener('click', () => {
-            modalTitle.innerText = "THE RAVEN'S RIDDLE";
-            const randomRiddle = allRiddles[Math.floor(Math.random() * allRiddles.length)];
-            typeWriter(`“${randomRiddle}”`, riddleText, 60); 
-            riddleAnswer.value = ''; 
-            riddleAnswer.style.display = 'block'; 
-            modal.classList.add('active');
-        });
-
-        function siphonIntoVoid() {
-            clearInterval(typingInterval);
-
-            const answerText = riddleAnswer.value.trim();
-            
-            let targetElement, textToSiphon, isTextarea;
-            if (answerText) {
-                targetElement = riddleAnswer;
-                textToSiphon = answerText;
-                isTextarea = true;
-                riddleAnswer.value = ''; 
-                riddleAnswer.blur();
-            } else {
-                targetElement = riddleText;
-                textToSiphon = riddleText.textContent || riddleText.innerText;
-                isTextarea = false;
-            }
-
-            if (!textToSiphon) {
-                modal.classList.remove('active');
-                return;
-            }
-
-            const rect = targetElement.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            const computedStyle = window.getComputedStyle(targetElement);
-            const fontFamily = computedStyle.fontFamily;
-            const fontSize = computedStyle.fontSize;
-            const lineHeight = computedStyle.lineHeight;
-
-            let charRects = [];
-            
-            if (isTextarea) {
-                const tempDiv = document.createElement('div');
-                tempDiv.style.position = 'fixed';
-                tempDiv.style.left = rect.left + 'px';
-                tempDiv.style.top = rect.top + 'px';
-                tempDiv.style.width = rect.width + 'px';
-                tempDiv.style.height = rect.height + 'px';
-                tempDiv.style.font = fontSize + ' ' + fontFamily;
-                tempDiv.style.lineHeight = lineHeight;
-                tempDiv.style.padding = computedStyle.padding;
-                tempDiv.style.whiteSpace = 'pre-wrap';
-                tempDiv.style.wordBreak = 'break-word';
-                tempDiv.style.visibility = 'hidden';
-                tempDiv.textContent = textToSiphon;
-                document.body.appendChild(tempDiv);
-
-                const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT);
-                let node;
-                while (node = walker.nextNode()) {
-                    for (let i = 0; i < node.length; i++) {
-                        const char = node.textContent[i];
-                        if (char.trim() === '') continue;
-                        const range = document.createRange();
-                        range.setStart(node, i);
-                        range.setEnd(node, i + 1);
-                        const charRect = range.getBoundingClientRect();
-                        if (charRect.width > 0 && charRect.height > 0) {
-                            charRects.push({ char, rect: charRect });
-                        }
-                    }
-                }
-                tempDiv.remove();
-            } else {
-                const walker = document.createTreeWalker(targetElement, NodeFilter.SHOW_TEXT);
-                let node;
-                while (node = walker.nextNode()) {
-                    for (let i = 0; i < node.length; i++) {
-                        const char = node.textContent[i];
-                        if (char.trim() === '') continue;
-                        const range = document.createRange();
-                        range.setStart(node, i);
-                        range.setEnd(node, i + 1);
-                        const charRect = range.getBoundingClientRect();
-                        if (charRect.width > 0 && charRect.height > 0) {
-                            charRects.push({ char, rect: charRect });
-                        }
-                    }
-                }
-                riddleText.textContent = '';
-            }
-
-            const particleCount = Math.min(Math.max(textToSiphon.length * 4, 20), 150);
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.style.position = 'fixed';
-                const startX = rect.left + Math.random() * rect.width;
-                const startY = rect.top + Math.random() * rect.height;
-                particle.style.left = startX + 'px';
-                particle.style.top = startY + 'px';
-                const size = 1 + Math.random() * 3;
-                particle.style.width = size + 'px';
-                particle.style.height = size + 'px';
-                particle.style.background = Math.random() > 0.5 ? '#d1b3ff' : '#6f78ff';
-                particle.style.borderRadius = '50%';
-                particle.style.boxShadow = `0 0 10px ${particle.style.background}`;
-                particle.style.pointerEvents = 'none';
-                particle.style.zIndex = 1999;
-                document.body.appendChild(particle);
-
-                const dx = centerX - startX;
-                const dy = centerY - startY;
-
-                particle.animate([
-                    { transform: 'translate(0, 0) scale(1)', opacity: 0 },
-                    { opacity: 1, offset: 0.2 },
-                    { transform: `translate(${dx}px, ${dy}px) scale(0)`, opacity: 0 }
-                ], {
-                    duration: 600 + Math.random() * 400,
-                    easing: 'cubic-bezier(0.5, 0, 1, 1)',
-                    fill: 'forwards'
-                }).onfinish = () => particle.remove();
-            }
-
-            charRects.forEach(({ char, rect: charRect }) => {
-                const span = document.createElement('span');
-                span.textContent = char;
-                span.style.position = 'fixed';
-                span.style.left = charRect.left + 'px';
-                span.style.top = charRect.top + 'px';
-                span.style.fontFamily = fontFamily;
-                span.style.fontSize = fontSize;
-                span.style.lineHeight = lineHeight;
-                span.style.pointerEvents = 'none';
-                span.style.zIndex = 2000;
-                span.style.color = '#e0ffff'; 
-                document.body.appendChild(span);
-
-                const dx = centerX - (charRect.left + charRect.width / 2);
-                const dy = centerY - (charRect.top + charRect.height / 2);
-
-                span.animate([
-                    { transform: 'translate(0, 0) scale(1) rotate(0deg)', color: '#e0ffff', opacity: 1, filter: 'blur(0px)' },
-                    { transform: `translate(${dx * 0.4}px, ${dy * 0.4}px) scale(1.2) rotate(${Math.random() * 180}deg)`, color: '#b388ff', opacity: 0.8, filter: 'blur(1px)', offset: 0.4 },
-                    { transform: `translate(${dx}px, ${dy}px) scale(0) rotate(${Math.random() * 720}deg)`, color: '#ffffff', opacity: 0, filter: 'blur(4px)' }
-                ], {
-                    duration: 700 + Math.random() * 300,
-                    easing: 'cubic-bezier(0.6, 0, 1, 1)', 
-                    fill: 'forwards'
-                }).onfinish = () => span.remove();
-            });
-
-            const singularity = document.createElement('div');
-            singularity.style.position = 'fixed';
-            singularity.style.left = centerX + 'px';
-            singularity.style.top = centerY + 'px';
-            singularity.style.width = '10px';
-            singularity.style.height = '10px';
-            singularity.style.background = '#ffffff';
-            singularity.style.borderRadius = '50%';
-            singularity.style.boxShadow = '0 0 40px 20px rgba(180,100,255,0.8)';
-            singularity.style.pointerEvents = 'none';
-            singularity.style.zIndex = 2001;
-            singularity.style.transform = 'translate(-50%, -50%)';
-            document.body.appendChild(singularity);
-
-            singularity.animate([
-                { transform: 'translate(-50%, -50%) scale(0.1)', opacity: 0 },
-                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.8 },
-                { transform: 'translate(-50%, -50%) scale(3)', opacity: 0 }
-            ], {
-                duration: 1000,
-                easing: 'ease-in',
-                fill: 'forwards'
-            }).onfinish = () => singularity.remove();
-
-            setTimeout(() => {
-                modal.classList.remove('active');
-            }, 600);
-        }
-
-        closeRiddle.addEventListener('click', siphonIntoVoid);
-        modal.addEventListener('click', (e) => { if(e.target === modal) siphonIntoVoid(); });
-
-
-        function drawRadar() {
-            const container = document.getElementById('radar-container');
-            const dims = ['逻辑力', '共情力', '创造力', '决断力'];
-            const vals = dims.map(() => 20 + Math.random() * 70);
-            const cx = 120, cy = 90, r = 60;
-
-            let svg = `<svg viewBox="0 0 240 180" width="100%" height="100%">`;
-            svg += `<polygon points="120,30 210,90 120,150 30,90" fill="none" stroke="rgba(190,170,255,0.1)" stroke-width="1"/>`;
-            svg += `<polygon points="120,50 180,90 120,130 60,90" fill="none" stroke="rgba(190,170,255,0.1)" stroke-width="1"/>`;
-            svg += `<line x1="120" y1="30" x2="120" y2="150" stroke="rgba(190,170,255,0.2)" stroke-width="1"/>`;
-            svg += `<line x1="30" y1="90" x2="210" y2="90" stroke="rgba(190,170,255,0.2)" stroke-width="1"/>`;
-
-            let points = [];
-            for (let i = 0; i < 4; i++) {
-                let angle = (Math.PI / 2) * i;
-                let x = cx + Math.cos(angle) * (vals[i] / 100 * r);
-                let y = cy - Math.sin(angle) * (vals[i] / 100 * r);
-                points.push(`${x},${y}`);
-            }
-            
-            svg += `<polygon points="${points.join(' ')}" fill="rgba(205,168,125,0.2)" stroke="var(--bronze)" stroke-width="2"/>`;
-            points.forEach(p => {
-                let [x, y] = p.split(',');
-                svg += `<circle cx="${x}" cy="${y}" r="3" fill="var(--frost)" filter="drop-shadow(0 0 4px var(--frost))"/>`;
-            });
-
-            svg += `<text x="120" y="20" fill="var(--ink-3)" font-size="10" text-anchor="middle">逻辑力</text>`;
-            svg += `<text x="225" y="93" fill="var(--ink-3)" font-size="10" text-anchor="start">共情力</text>`;
-            svg += `<text x="120" y="165" fill="var(--ink-3)" font-size="10" text-anchor="middle">创造力</text>`;
-            svg += `<text x="15" y="93" fill="var(--ink-3)" font-size="10" text-anchor="end">决断力</text>`;
-            
-            svg += `</svg>`;
-            container.innerHTML = svg;
-        }
-        drawRadar();
-
-        const dayPlate = document.getElementById('day-plate');
-        const violetLayer = document.getElementById('violet-layer');
-        const nightPlate = document.getElementById('night-plate');
-        const nav = document.getElementById('nav');
-        const endSection = document.getElementById('end');
-        const pondVideo = document.getElementById('pond-video');
-
-        function smoothstep(a, b, v) {
-            const t = Math.max(0, Math.min(1, (v - a) / (b - a)));
-            return t * t * (3 - 2 * t);
-        }
-
-        window.addEventListener('scroll', () => {
-            const h = window.innerHeight;
-            const y = window.scrollY;
-            const endTop = endSection.offsetTop;
-
-            const toViolet = smoothstep(0.15 * h, 1.05 * h, y);
-            const toNight = smoothstep(endTop - 1.1 * h, endTop - 0.1 * h, y);
-
-            dayPlate.style.opacity = 1 - toViolet;
-            dayPlate.style.transform = `scale(${1 + 0.08 * toViolet}) translateY(${-0.06 * y}px)`;
-            
-            violetLayer.style.opacity = toViolet * (1 - toNight);
-            nightPlate.style.opacity = toNight;
-
-            if (y > 0.5 * h) nav.classList.add('scrolled');
-            else nav.classList.remove('scrolled');
-
-            if (toViolet > 0.999) { if(!pondVideo.paused) pondVideo.pause(); }
-            else { if(pondVideo.paused) pondVideo.play().catch(e=>e); }
-        });
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('in');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.15 });
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-        const codeText = `{
+/* ---------- 背景与滚动 ---------- */
+const dayPlate = document.getElementById('day-plate');
+const violetLayer = document.getElementById('violet-layer');
+const nightPlate = document.getElementById('night-plate');
+const nav = document.getElementById('nav');
+const endSection = document.getElementById('end');
+const pondVideo = document.getElementById('pond-video');
+function smoothstep(a, b, v) {
+    const t = Math.max(0, Math.min(1, (v - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+}
+window.addEventListener('scroll', () => {
+    const h = window.innerHeight, y = window.scrollY;
+    const endTop = endSection.offsetTop;
+    const toViolet = smoothstep(0.15 * h, 1.05 * h, y);
+    const toNight = smoothstep(endTop - 1.1 * h, endTop - 0.1 * h, y);
+    dayPlate.style.opacity = 1 - toViolet;
+    dayPlate.style.transform = `scale(${1 + 0.08 * toViolet}) translateY(${-0.06 * y}px)`;
+    violetLayer.style.opacity = toViolet * (1 - toNight);
+    nightPlate.style.opacity = toNight;
+    if (y > 0.5 * h) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+    if (toViolet > 0.999) { if (!pondVideo.paused) pondVideo.pause(); }
+    else { if (pondVideo.paused) pondVideo.play().catch(() => {}); }
+});
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); observer.unobserve(e.target); } });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+const codeText = `{
   "name": "Patrick",
   "house": "IDK",
   "realm": "IDK TOO",
@@ -1266,332 +1475,288 @@
   "skills": ["eating"],
   "current_project": "Patrick.github.io"
 }`;
-        const codeEl = document.getElementById('typing-code');
-        let isTypingStarted = false;
+const codeEl = document.getElementById('typing-code');
+let isTypingStarted = false;
+const typingObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !isTypingStarted) {
+        isTypingStarted = true;
+        let i = 0;
+        (function typeCode() { if (i < codeText.length) { codeEl.textContent += codeText.charAt(i); i++; setTimeout(typeCode, 22); } })();
+    }
+}, { threshold: 0.3 });
+if (codeEl) typingObserver.observe(codeEl);
+</script>
 
-        const typingObserver = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !isTypingStarted) {
-                isTypingStarted = true;
-                let i = 0;
-                function typeCode() {
-                    if (i < codeText.length) {
-                        codeEl.textContent += codeText.charAt(i);
-                        i++;
-                        setTimeout(typeCode, 22);
-                    }
-                }
-                typeCode();
-            }
-        }, { threshold: 0.3 });
-        if (codeEl) typingObserver.observe(codeEl);
-    </script>
-
-    <script>
-        (function() {
-            const video = document.getElementById('pond-video');
-            const canvas = document.getElementById('pondfx');
-            const gl = canvas.getContext('webgl', { alpha: true, antialias: true });
-            if (!gl) { video.style.opacity = 1; return; }
-
-            const vsSource = `attribute vec2 position; varying vec2 vUv; void main() { vUv = position * 0.5 + 0.5; gl_Position = vec4(position, 0.0, 1.0); }`;
-            const fsSource = `
-                precision highp float;
-                varying vec2 vUv;
-                uniform sampler2D u_tex; uniform vec2 u_mouse; uniform float u_time; uniform float u_presence; uniform vec2 u_tilt; uniform vec2 u_scale;
-                void main() {
-                    vec2 uv = vUv; float dist = distance(uv, u_mouse); vec2 dir = normalize(uv - u_mouse + 1e-5);
-                    float ripple = sin(dist * 30.0 - u_time * 8.0) * 0.015; 
-                    float strength = smoothstep(0.35, 0.0, dist) * u_presence;
-                    vec2 rippleOffset = dir * ripple * strength;
-                    vec2 finalUv = uv + rippleOffset;
-                    vec2 sampleUv = (finalUv - 0.5) * u_scale + 0.5 + u_tilt;
-                    float caStrength = 0.02 * strength;
-                    float r = texture2D(u_tex, sampleUv + dir * caStrength).r;
-                    float g = texture2D(u_tex, sampleUv).g;
-                    float b = texture2D(u_tex, sampleUv - dir * caStrength).b;
-                    gl_FragColor = vec4(r, g, b, 1.0);
-                }
-            `;
-            function compileShader(gl, type, source) { const shader = gl.createShader(type); gl.shaderSource(shader, source); gl.compileShader(shader); return shader; }
-            const program = gl.createProgram(); gl.attachShader(program, compileShader(gl, gl.VERTEX_SHADER, vsSource)); gl.attachShader(program, compileShader(gl, gl.FRAGMENT_SHADER, fsSource)); gl.linkProgram(program); gl.useProgram(program);
-
-            const positionBuffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-            const positionLocation = gl.getAttribLocation(program, "position"); gl.enableVertexAttribArray(positionLocation); gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
-            const texture = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-            const uTex = gl.getUniformLocation(program, "u_tex"); const uMouse = gl.getUniformLocation(program, "u_mouse"); const uTime = gl.getUniformLocation(program, "u_time"); const uPresence = gl.getUniformLocation(program, "u_presence"); const uTilt = gl.getUniformLocation(program, "u_tilt"); const uScale = gl.getUniformLocation(program, "u_scale");
-
-            let mouse = { x: 0.5, y: 0.5 }; let targetTilt = { x: 0, y: 0 }; let currentTilt = { x: 0, y: 0 }; let presence = 0; let startTime = Date.now(); let isPlaying = false;
-
-            video.addEventListener('playing', () => { isPlaying = true; canvas.style.opacity = 1; });
-            window.addEventListener('pointermove', (e) => {
-                mouse.x = e.clientX / window.innerWidth; mouse.y = 1.0 - (e.clientY / window.innerHeight);
-                targetTilt.x = (mouse.x * 2 - 1) * 0.08; targetTilt.y = (mouse.y * 2 - 1) * 0.08; presence = 1;
-            });
-            document.documentElement.addEventListener('pointerleave', () => { targetTilt.x = 0; targetTilt.y = 0; presence = 0; });
-
-            function resize() {
-                const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-                canvas.width = window.innerWidth * dpr; canvas.height = window.innerHeight * dpr; gl.viewport(0, 0, canvas.width, canvas.height);
-                const aspect = canvas.width / canvas.height; const videoAspect = 1276 / 720;
-                let scaleX = 1, scaleY = 1;
-                if (aspect > videoAspect) scaleY = videoAspect / aspect; else scaleX = aspect / videoAspect;
-                gl.uniform2f(uScale, scaleX * 0.975, scaleY * 0.975);
-            }
-            window.addEventListener('resize', resize); resize();
-
-            function render() {
-                requestAnimationFrame(render);
-                if (!isPlaying || video.paused || video.readyState < 2) return;
-                const time = (Date.now() - startTime) / 1000;
-                currentTilt.x += (targetTilt.x - currentTilt.x) * 0.1; currentTilt.y += (targetTilt.y - currentTilt.y) * 0.1;
-                gl.bindTexture(gl.TEXTURE_2D, texture);
-                try {
-                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
-                } catch (err) {
-                    video.style.opacity = 1;
-                    canvas.style.opacity = 0;
-                    return;
-                }
-                gl.uniform1i(uTex, 0); gl.uniform2f(uMouse, mouse.x, mouse.y); gl.uniform1f(uTime, time); gl.uniform1f(uPresence, presence); gl.uniform2f(uTilt, currentTilt.x, currentTilt.y);
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-            }
-            video.play().catch(e => console.log("Video autoplay blocked:", e)); render();
-        })();
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-
-        const canvas = document.getElementById('koi-canvas');
-        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.95;
-
-        const scene = new THREE.Scene();
-        const pmremGenerator = new THREE.PMREMGenerator(renderer);
-        scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-
-        const hemiLight = new THREE.HemisphereLight(0xc6b2ff, 0x2a1c80, 0.7); scene.add(hemiLight);
-        const keyLight = new THREE.DirectionalLight(0xffc8f0, 1.6); keyLight.position.set(3, 5, 6); scene.add(keyLight);
-        const rimLight = new THREE.DirectionalLight(0x8c7bff, 2.8); rimLight.position.set(-5, -1, -4); scene.add(rimLight);
-        const frontLight = new THREE.DirectionalLight(0xc9b4ff, 0.8); frontLight.position.set(0, 2, 10); scene.add(frontLight);
-
-        const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 0, 10);
-
-        const rig = new THREE.Group();
-        const body = new THREE.Group();
-        rig.add(body);
-        scene.add(rig);
-
-        let koiMesh = null;
-        let uniformTime = { value: 0 };
-
-        let currentScrollY = window.scrollY;
-        let targetScrollY = window.scrollY;
-        let currentPose = { x: 0.02, yPos: 0.16, s: 0.72, yaw: 0.18, pitch: -0.92, roll: 0.05 };
-        let targetPose = { ...currentPose };
-
-        const sections = {
-            hero: 0,
-            statement: document.getElementById('studio').offsetTop + window.innerHeight * 0.2,
-            dash: document.querySelector('.dashboard').offsetTop + document.querySelector('.dashboard').offsetHeight / 2 - window.innerHeight * 0.5,
-            packs: document.getElementById('packs').offsetTop + window.innerHeight * 0.3,
-            uses: document.getElementById('uses').offsetTop + window.innerHeight * 0.3,
-            end: document.getElementById('end').offsetTop
-        };
-
-        const poses = [
-            { y: sections.hero, x: 0.02, yPos: 0.16, s: 0.72, yaw: 0.18, pitch: -0.92, roll: 0.05 },
-            { y: sections.statement, x: -0.66, yPos: -0.6, s: 0.42, yaw: 0.5, pitch: 0.2, roll: -0.1 },
-            { y: sections.dash, x: 0.5, yPos: -0.5, s: 0.46, yaw: -0.35, pitch: 0.32, roll: 0.1 },
-            { y: sections.packs, x: 0.4, yPos: -0.78, s: 0.5, yaw: 0.55, pitch: -0.05, roll: 0.08 },
-            { y: sections.uses, x: -0.42, yPos: -0.42, s: 0.6, yaw: 3.0, pitch: 0.12, roll: -0.06 },
-            { y: sections.end, x: -0.7, yPos: 0.56, s: 0.48, yaw: 0.3, pitch: -0.14, roll: 0.05 }
-        ];
-
-        if (window.innerWidth <= 820) {
-            poses[0] = { ...poses[0], x: 0.12, yPos: 0.38, s: 0.46 };
-            poses[1] = { ...poses[1], x: 0.42, yPos: -0.72, s: 0.3 };
-            poses[2] = { ...poses[2], x: -0.35, yPos: -0.74, s: 0.3 };
-            poses[3] = { ...poses[3], x: 0.38, yPos: -0.74, s: 0.3 };
-            poses[4] = { ...poses[4], x: -0.3, yPos: -0.76, s: 0.32 };
-            poses[5] = { ...poses[5], x: 0.3, yPos: -0.74, s: 0.32 };
+<script>
+(function() {
+    const video = document.getElementById('pond-video');
+    const canvas = document.getElementById('pondfx');
+    const gl = canvas.getContext('webgl', { alpha: true, antialias: true });
+    if (!gl) { video.style.opacity = 1; return; }
+    const vsSource = `attribute vec2 position; varying vec2 vUv; void main() { vUv = position * 0.5 + 0.5; gl_Position = vec4(position, 0.0, 1.0); }`;
+    const fsSource = `
+        precision highp float;
+        varying vec2 vUv;
+        uniform sampler2D u_tex; uniform vec2 u_mouse; uniform float u_time; uniform float u_presence; uniform vec2 u_tilt; uniform vec2 u_scale;
+        void main() {
+            vec2 uv = vUv; float dist = distance(uv, u_mouse); vec2 dir = normalize(uv - u_mouse + 1e-5);
+            float ripple = sin(dist * 30.0 - u_time * 8.0) * 0.015;
+            float strength = smoothstep(0.35, 0.0, dist) * u_presence;
+            vec2 rippleOffset = dir * ripple * strength;
+            vec2 finalUv = uv + rippleOffset;
+            vec2 sampleUv = (finalUv - 0.5) * u_scale + 0.5 + u_tilt;
+            float caStrength = 0.02 * strength;
+            float r = texture2D(u_tex, sampleUv + dir * caStrength).r;
+            float g = texture2D(u_tex, sampleUv).g;
+            float b = texture2D(u_tex, sampleUv - dir * caStrength).b;
+            gl_FragColor = vec4(r, g, b, 1.0);
         }
+    `;
+    function compileShader(gl, type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+    const program = gl.createProgram();
+    gl.attachShader(program, compileShader(gl, gl.VERTEX_SHADER, vsSource));
+    gl.attachShader(program, compileShader(gl, gl.FRAGMENT_SHADER, fsSource));
+    gl.linkProgram(program); gl.useProgram(program);
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(program, "position"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    const uTex = gl.getUniformLocation(program, "u_tex"); const uMouse = gl.getUniformLocation(program, "u_mouse"); const uTime = gl.getUniformLocation(program, "u_time"); const uPresence = gl.getUniformLocation(program, "u_presence"); const uTilt = gl.getUniformLocation(program, "u_tilt"); const uScale = gl.getUniformLocation(program, "u_scale");
+    let mouse = { x: 0.5, y: 0.5 }; let targetTilt = { x: 0, y: 0 }, currentTilt = { x: 0, y: 0 };
+    let presence = 0, startTime = Date.now(), isPlaying = false;
+    video.addEventListener('playing', () => { isPlaying = true; canvas.style.opacity = 1; });
+    window.addEventListener('pointermove', (e) => {
+        mouse.x = e.clientX / window.innerWidth; mouse.y = 1.0 - (e.clientY / window.innerHeight);
+        targetTilt.x = (mouse.x * 2 - 1) * 0.08; targetTilt.y = (mouse.y * 2 - 1) * 0.08; presence = 1;
+    });
+    document.documentElement.addEventListener('pointerleave', () => { targetTilt.x = 0; targetTilt.y = 0; presence = 0; });
+    function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        canvas.width = window.innerWidth * dpr; canvas.height = window.innerHeight * dpr;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        const aspect = canvas.width / canvas.height, videoAspect = 1276 / 720;
+        let sx = 1, sy = 1;
+        if (aspect > videoAspect) sy = videoAspect / aspect; else sx = aspect / videoAspect;
+        gl.uniform2f(uScale, sx * 0.975, sy * 0.975);
+    }
+    window.addEventListener('resize', resize); resize();
+    function render() {
+        requestAnimationFrame(render);
+        if (!isPlaying || video.paused || video.readyState < 2) return;
+        const time = (Date.now() - startTime) / 1000;
+        currentTilt.x += (targetTilt.x - currentTilt.x) * 0.1; currentTilt.y += (targetTilt.y - currentTilt.y) * 0.1;
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video); }
+        catch (e) { video.style.opacity = 1; canvas.style.opacity = 0; return; }
+        gl.uniform1i(uTex, 0); gl.uniform2f(uMouse, mouse.x, mouse.y); gl.uniform1f(uTime, time); gl.uniform1f(uPresence, presence); gl.uniform2f(uTilt, currentTilt.x, currentTilt.y);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    video.play().catch(() => {}); render();
+})();
+</script>
 
-        const loader = new GLTFLoader();
-        loader.load('https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20261104_151843_47d87652-1c40-465c-b0d6-cd94c22a9d3e.glb', (gltf) => {
-            const model = gltf.scene;
-            let actualMesh = null;
-            model.traverse(child => {
-                if (child.isMesh) {
-                    child.updateMatrixWorld(true);
-                    child.geometry.applyMatrix4(child.matrixWorld);
-                    if (!actualMesh) actualMesh = child;
-                }
-            });
-            if (!actualMesh) return;
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-            let originalMap = null;
-            let originalNormalMap = null;
-            const mat = Array.isArray(actualMesh.material) ? actualMesh.material[0] : actualMesh.material;
-            if (mat) {
-                if (mat.map) originalMap = mat.map;
-                if (mat.normalMap) originalNormalMap = mat.normalMap;
-            }
+const canvas = document.getElementById('koi-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
 
-            actualMesh.geometry.computeBoundingBox();
-            const box = actualMesh.geometry.boundingBox;
-            const size = box.getSize(new THREE.Vector3());
-            const center = box.getCenter(new THREE.Vector3());
-            const maxAxis = Math.max(size.x, size.y, size.z);
-            const scaleFactor = 1 / maxAxis;
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.add(new THREE.HemisphereLight(0xc6b2ff, 0x2a1c80, 0.7));
+const keyLight = new THREE.DirectionalLight(0xffc8f0, 1.6); keyLight.position.set(3, 5, 6); scene.add(keyLight);
+const rimLight = new THREE.DirectionalLight(0x8c7bff, 2.8); rimLight.position.set(-5, -1, -4); scene.add(rimLight);
+const frontLight = new THREE.DirectionalLight(0xc9b4ff, 0.8); frontLight.position.set(0, 2, 10); scene.add(frontLight);
 
-            actualMesh.geometry.translate(-center.x, -center.y, -center.z);
+const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 10);
+const rig = new THREE.Group(); const bodyGroup = new THREE.Group();
+rig.add(bodyGroup); scene.add(rig);
 
-            const matrix = new THREE.Matrix4();
-            if (maxAxis === size.z) matrix.makeRotationY(Math.PI / 2);
-            else if (maxAxis === size.y) matrix.makeRotationZ(-Math.PI / 2);
-            actualMesh.geometry.applyMatrix4(matrix);
+let koiMesh = null;
+const uniformTime = { value: 0 };
+let currentPose = { x: 0.02, yPos: 0.16, s: 0.72, yaw: 0.18, pitch: -0.92, roll: 0.05 };
+let targetPose = { ...currentPose };
+let sections, poses;
 
-            const matrixFlip = new THREE.Matrix4().makeRotationY(Math.PI);
-            actualMesh.geometry.applyMatrix4(matrixFlip);
-            
-            actualMesh.geometry.scale(scaleFactor, scaleFactor, scaleFactor);
-            actualMesh.geometry.computeVertexNormals();
+function computeSections() {
+    return {
+        hero: 0,
+        statement: document.getElementById('studio').offsetTop + window.innerHeight * 0.2,
+        dash: document.querySelector('.dashboard').offsetTop + document.querySelector('.dashboard').offsetHeight / 2 - window.innerHeight * 0.5,
+        packs: document.getElementById('packs').offsetTop + window.innerHeight * 0.3,
+        uses: document.getElementById('uses').offsetTop + window.innerHeight * 0.3,
+        end: document.getElementById('end').offsetTop
+    };
+}
+function buildPoses(s) {
+    const p = [
+        { y: s.hero, x: 0.02, yPos: 0.16, s: 0.72, yaw: 0.18, pitch: -0.92, roll: 0.05 },
+        { y: s.statement, x: -0.66, yPos: -0.6, s: 0.42, yaw: 0.5, pitch: 0.2, roll: -0.1 },
+        { y: s.dash, x: 0.5, yPos: -0.5, s: 0.46, yaw: -0.35, pitch: 0.32, roll: 0.1 },
+        { y: s.packs, x: 0.4, yPos: -0.78, s: 0.5, yaw: 0.55, pitch: -0.05, roll: 0.08 },
+        { y: s.uses, x: -0.42, yPos: -0.42, s: 0.6, yaw: 3.0, pitch: 0.12, roll: -0.06 },
+        { y: s.end, x: -0.7, yPos: 0.56, s: 0.48, yaw: 0.3, pitch: -0.14, roll: 0.05 }
+    ];
+    if (window.innerWidth <= 820) {
+        p[0] = { ...p[0], x: 0.12, yPos: 0.38, s: 0.46 };
+        p[1] = { ...p[1], x: 0.42, yPos: -0.72, s: 0.3 };
+        p[2] = { ...p[2], x: -0.35, yPos: -0.74, s: 0.3 };
+        p[3] = { ...p[3], x: 0.38, yPos: -0.74, s: 0.3 };
+        p[4] = { ...p[4], x: -0.3, yPos: -0.76, s: 0.32 };
+        p[5] = { ...p[5], x: 0.3, yPos: -0.74, s: 0.32 };
+    }
+    return p;
+}
+function refreshLayout() {
+    sections = computeSections();
+    poses = buildPoses(sections);
+    currentPose = { ...poses[0] };
+}
+refreshLayout();
+window.addEventListener('load', refreshLayout);
 
-            const crystalMat = new THREE.MeshPhysicalMaterial({
-                color: 0xffffff,
-                map: originalMap,
-                normalMap: originalNormalMap,
-                emissiveMap: originalMap,
-                emissive: new THREE.Color(0x9d4edd),
-                emissiveIntensity: 0.8,
-                roughness: 0.25,
-                metalness: 0.2,
-                clearcoat: 1.0,
-                clearcoatRoughness: 0.1,
-                iridescence: 1.0,
-                transparent: true,
-                opacity: 0.95,
-                envMapIntensity: 1.0,
-                side: THREE.DoubleSide
-            });
-
-            crystalMat.customProgramCacheKey = () => 'koi_crystal_v3';
-
-            crystalMat.onBeforeCompile = (shader) => {
-                shader.uniforms.u_time = uniformTime;
-                shader.vertexShader = `uniform float u_time;\n` + shader.vertexShader;
-                shader.vertexShader = shader.vertexShader.replace(
-                    '#include <begin_vertex>',
-                    `
-                    vec3 transformed = vec3(position);
-                    float tail = clamp((0.32 - position.x) / 0.82, 0.0, 1.0);
-                    
-                    float freq = 3.5;  
-                    float speed = 1.5; 
-                    float amp = 0.25;  
-                    
-                    transformed.z += sin(position.x * freq - u_time * speed) * amp * (0.15 + 1.6 * tail * tail);
-                    transformed.y += cos(position.x * freq * 0.5 - u_time * speed * 0.5) * amp * 0.25 * tail;
-                    `
-                );
-            };
-
-            koiMesh = new THREE.Mesh(actualMesh.geometry, crystalMat);
-            koiMesh.frustumCulled = false; 
-            body.add(koiMesh);
-        });
-
-        const clock = new THREE.Clock();
-        
-        let targetTx = 0, targetTy = 0, currentTx = 0, currentTy = 0;
-        window.addEventListener('pointermove', (e) => {
-            targetTx = (e.clientX / window.innerWidth) * 2 - 1;
-            targetTy = -(e.clientY / window.innerHeight) * 2 + 1;
-        });
-        document.documentElement.addEventListener('pointerleave', () => { targetTx = 0; targetTy = 0; });
-
-        function render() {
-            requestAnimationFrame(render);
-            const dt = Math.min(clock.getDelta(), 0.05);
-            const t = clock.getElapsedTime();
-            
-            uniformTime.value += dt * 0.8; 
-
-            const camK = 1 - Math.exp(-dt / 0.1);
-            currentTx += (targetTx - currentTx) * camK;
-            currentTy += (targetTy - currentTy) * camK;
-            camera.rotation.y = -currentTx * 0.01745;
-            camera.rotation.x = currentTy * 0.01745;
-
-            targetScrollY = window.scrollY;
-            currentScrollY += (targetScrollY - currentScrollY) * (1 - Math.exp(-3.0 * dt));
-            
-            if (currentScrollY <= poses[0].y) {
-                targetPose = poses[0];
-            } else if (currentScrollY >= poses[poses.length-1].y) {
-                targetPose = poses[poses.length-1];
-            } else {
-                for (let i = 0; i < poses.length - 1; i++) {
-                    if (currentScrollY >= poses[i].y && currentScrollY < poses[i+1].y) {
-                        const tPose = (currentScrollY - poses[i].y) / (poses[i+1].y - poses[i].y);
-                        const eT = tPose < 0.5 ? 4 * tPose * tPose * tPose : 1 - Math.pow(-2 * tPose + 2, 3) / 2;
-                        targetPose = {
-                            x: poses[i].x + (poses[i+1].x - poses[i].x) * eT,
-                            yPos: poses[i].yPos + (poses[i+1].yPos - poses[i].yPos) * eT,
-                            s: poses[i].s + (poses[i+1].s - poses[i].s) * eT,
-                            yaw: poses[i].yaw + (poses[i+1].yaw - poses[i].yaw) * eT,
-                            pitch: poses[i].pitch + (poses[i+1].pitch - poses[i].pitch) * eT,
-                            roll: poses[i].roll + (poses[i+1].roll - poses[i].roll) * eT
-                        };
-                        break;
-                    }
-                }
-            }
-
-            if (koiMesh) {
-                const poseK = 1 - Math.exp(-4.0 * dt); 
-                currentPose.x += (targetPose.x - currentPose.x) * poseK;
-                currentPose.yPos += (targetPose.yPos - currentPose.yPos) * poseK;
-                currentPose.s += (targetPose.s - currentPose.s) * poseK;
-                currentPose.yaw += (targetPose.yaw - currentPose.yaw) * poseK;
-                currentPose.pitch += (targetPose.pitch - currentPose.pitch) * poseK;
-                currentPose.roll += (targetPose.roll - currentPose.roll) * poseK;
-
-                const fw = 2 * Math.tan(15 * Math.PI / 180) * 10 * camera.aspect;
-                const fh = 2 * Math.tan(15 * Math.PI / 180) * 10;
-                const bob = Math.sin(0.9 * t) * 0.018;
-                
-                rig.position.set(currentPose.x * fw / 2, (currentPose.yPos + bob) * fh / 2, 0);
-                rig.rotation.set(
-                    currentPose.roll + Math.sin(0.7 * t) * 0.04,
-                    currentPose.yaw + Math.sin(0.5 * t) * 0.06,
-                    currentPose.pitch
-                );
-                body.scale.setScalar(currentPose.s * fh);
-            }
-            
-            renderer.render(scene, camera);
+const loader = new GLTFLoader();
+loader.load('https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20261104_151843_47d87652-1c40-465c-b0d6-cd94c22a9d3e.glb', (gltf) => {
+    const model = gltf.scene;
+    let actualMesh = null;
+    model.traverse(child => {
+        if (child.isMesh) {
+            child.updateMatrixWorld(true); child.geometry.applyMatrix4(child.matrixWorld);
+            if (!actualMesh) actualMesh = child;
         }
+    });
+    if (!actualMesh) return;
+    let originalMap = null, originalNormalMap = null;
+    const mat = Array.isArray(actualMesh.material) ? actualMesh.material[0] : actualMesh.material;
+    if (mat) { if (mat.map) originalMap = mat.map; if (mat.normalMap) originalNormalMap = mat.normalMap; }
+    actualMesh.geometry.computeBoundingBox();
+    const box = actualMesh.geometry.boundingBox;
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxAxis = Math.max(size.x, size.y, size.z);
+    const scaleFactor = 1 / maxAxis;
+    actualMesh.geometry.translate(-center.x, -center.y, -center.z);
+    const m = new THREE.Matrix4();
+    if (maxAxis === size.z) m.makeRotationY(Math.PI / 2);
+    else if (maxAxis === size.y) m.makeRotationZ(-Math.PI / 2);
+    actualMesh.geometry.applyMatrix4(m);
+    actualMesh.geometry.applyMatrix4(new THREE.Matrix4().makeRotationY(Math.PI));
+    actualMesh.geometry.scale(scaleFactor, scaleFactor, scaleFactor);
+    actualMesh.geometry.computeVertexNormals();
+    const crystalMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff, map: originalMap, normalMap: originalNormalMap,
+        emissiveMap: originalMap, emissive: new THREE.Color(0x9d4edd), emissiveIntensity: 0.8,
+        roughness: 0.25, metalness: 0.2, clearcoat: 1.0, clearcoatRoughness: 0.1,
+        iridescence: 1.0, transparent: true, opacity: 0.95, envMapIntensity: 1.0,
+        side: THREE.DoubleSide
+    });
+    crystalMat.customProgramCacheKey = () => 'koi_crystal_v3';
+    crystalMat.onBeforeCompile = (shader) => {
+        shader.uniforms.u_time = uniformTime;
+        shader.vertexShader = `uniform float u_time;\n` + shader.vertexShader;
+        shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `
+            vec3 transformed = vec3(position);
+            float tail = clamp((0.32 - position.x) / 0.82, 0.0, 1.0);
+            float freq = 3.5, speed = 1.5, amp = 0.25;
+            transformed.z += sin(position.x * freq - u_time * speed) * amp * (0.15 + 1.6 * tail * tail);
+            transformed.y += cos(position.x * freq * 0.5 - u_time * speed * 0.5) * amp * 0.25 * tail;
+        `);
+    };
+    koiMesh = new THREE.Mesh(actualMesh.geometry, crystalMat);
+    koiMesh.frustumCulled = false;
+    bodyGroup.add(koiMesh);
+}, undefined, (err) => { console.error('[KOI] GLB load failed:', err); });
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-        
-        render();
-    </script>
+let targetTx = 0, targetTy = 0, currentTx = 0, currentTy = 0;
+window.addEventListener('pointermove', (e) => {
+    targetTx = (e.clientX / window.innerWidth) * 2 - 1;
+    targetTy = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+document.documentElement.addEventListener('pointerleave', () => { targetTx = 0; targetTy = 0; });
+
+const clock = new THREE.Clock();
+let currentScrollY = window.scrollY, targetScrollY = window.scrollY;
+
+function render() {
+    requestAnimationFrame(render);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.getElapsedTime();
+    uniformTime.value += dt * 0.8;
+
+    const camK = 1 - Math.exp(-dt / 0.1);
+    currentTx += (targetTx - currentTx) * camK;
+    currentTy += (targetTy - currentTy) * camK;
+    camera.rotation.y = -currentTx * 0.01745;
+    camera.rotation.x = currentTy * 0.01745;
+
+    targetScrollY = window.scrollY;
+    currentScrollY += (targetScrollY - currentScrollY) * (1 - Math.exp(-3.0 * dt));
+
+    if (poses && poses.length) {
+        if (currentScrollY <= poses[0].y) targetPose = poses[0];
+        else if (currentScrollY >= poses[poses.length - 1].y) targetPose = poses[poses.length - 1];
+        else {
+            for (let i = 0; i < poses.length - 1; i++) {
+                if (currentScrollY >= poses[i].y && currentScrollY < poses[i + 1].y) {
+                    const tPose = (currentScrollY - poses[i].y) / (poses[i + 1].y - poses[i].y);
+                    const eT = tPose < 0.5 ? 4 * tPose * tPose * tPose : 1 - Math.pow(-2 * tPose + 2, 3) / 2;
+                    targetPose = {
+                        x: poses[i].x + (poses[i + 1].x - poses[i].x) * eT,
+                        yPos: poses[i].yPos + (poses[i + 1].yPos - poses[i].yPos) * eT,
+                        s: poses[i].s + (poses[i + 1].s - poses[i].s) * eT,
+                        yaw: poses[i].yaw + (poses[i + 1].yaw - poses[i].yaw) * eT,
+                        pitch: poses[i].pitch + (poses[i + 1].pitch - poses[i].pitch) * eT,
+                        roll: poses[i].roll + (poses[i + 1].roll - poses[i].roll) * eT
+                    };
+                    break;
+                }
+            }
+        }
+    }
+
+    if (koiMesh) {
+        const poseK = 1 - Math.exp(-4.0 * dt);
+        currentPose.x += (targetPose.x - currentPose.x) * poseK;
+        currentPose.yPos += (targetPose.yPos - currentPose.yPos) * poseK;
+        currentPose.s += (targetPose.s - currentPose.s) * poseK;
+        currentPose.yaw += (targetPose.yaw - currentPose.yaw) * poseK;
+        currentPose.pitch += (targetPose.pitch - currentPose.pitch) * poseK;
+        currentPose.roll += (targetPose.roll - currentPose.roll) * poseK;
+
+        const fw = 2 * Math.tan(15 * Math.PI / 180) * 10 * camera.aspect;
+        const fh = 2 * Math.tan(15 * Math.PI / 180) * 10;
+        const bob = Math.sin(0.9 * t) * 0.018;
+
+        rig.position.set(currentPose.x * fw / 2, (currentPose.yPos + bob) * fh / 2, 0);
+        rig.rotation.set(
+            currentPose.roll + Math.sin(0.7 * t) * 0.04,
+            currentPose.yaw + Math.sin(0.5 * t) * 0.06,
+            currentPose.pitch
+        );
+        bodyGroup.scale.setScalar(currentPose.s * fh);
+    }
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+render();
+</script>
 </body>
 </html>
