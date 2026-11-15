@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>
+    // 只要支持 WebGPU，立刻打上标记
+    if ('gpu' in navigator) {
+        document.documentElement.classList.add('no-old-opening');
+    }
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Patrick — PATRICK IN INTERNET</title>
@@ -20,7 +26,8 @@
 {
     "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+        "vgpu": "https://esm.sh/vgpu@0.3.1"
     }
 }
 </script>
@@ -101,7 +108,7 @@ body.low-power #ring-canvas { opacity: 0.3; }
 body.cinema #cinema-tint { opacity: 1; }
 #koi-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; transition: filter 1.2s ease; }
 body.cinema #koi-canvas { filter: brightness(1.35) drop-shadow(0 0 28px rgba(170,110,255,.45)); }
-.watcher { position: fixed; right: 20px; bottom: 20px; width: 180px; height: 180px; z-index: 50; pointer-events: none; opacity: 0.6; filter: drop-shadow(0 0 10px rgba(205,168,125,0.3)); transition: opacity 1.2s ease; }
+.watcher { position: fixed; right: 20px; bottom: 20px; width: 180px; height: 180px; z-index: -1; pointer-events: none; opacity: 0.6; filter: drop-shadow(0 0 10px rgba(205,168,125,0.3)); transition: opacity 1.2s ease; }
 body.cinema .watcher { opacity: 0.25; }
 .door-knocker { position: fixed; right: 40px; bottom: 40px; width: 55px; height: 55px; z-index: 100; cursor: pointer; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(138,43,226,0.08); border: 1px solid rgba(138,43,226,0.4); transition: transform 0.3s; animation: breathe-purple 10s infinite; }
 .door-knocker:hover { transform: scale(1.1); }
@@ -395,10 +402,533 @@ body.immersive-mode #ring-canvas { transform: scale(1); }
 .hud-select option { background: #0d0830; color: var(--frost); }
 .audio-capture-btn { display: block; width: 100%; margin-top: 16px; padding: 8px; background: rgba(111,120,255,0.1); border: 1px solid rgba(111,120,255,0.3); color: var(--frost); border-radius: 6px; cursor: pointer; font-family: 'Fira Code', monospace; font-size: 11px; text-align: center; transition: all 0.3s; }
 .audio-capture-btn:hover { background: rgba(111,120,255,0.3); box-shadow: 0 0 15px rgba(111,120,255,0.4); }
+
+/* =========================================================
+   BranchedMenu · React Bits 原生移植（Dashboard 侧边栏）
+   —— 分支连线 / trunk 竖线 / 滑动 marker / 折叠动画
+   ========================================================= */
+.branched-menu {
+  --bm-w: 240px;
+  --bm-ink: var(--frost);
+  --bm-accent: var(--bronze);
+  --bm-line: rgba(196,178,255,.22);
+  --bm-font: 13px;
+  --bm-row: 34px;
+  --bm-indent: 40px;
+  --bm-line-w: 1.5;
+  --bm-draw: 400ms;
+  --bm-fold: 300ms;
+  --bm-ease-out: cubic-bezier(.23, 1, .32, 1);
+  --bm-muted: rgba(236,232,255,.56);
+  --bm-muted: color-mix(in srgb, var(--bm-ink) 55%, transparent);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  max-width: min(var(--bm-w), 100%);
+  padding-left: 14px;
+  color: var(--bm-ink);
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-size: var(--bm-font);
+  line-height: 1.2;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.branched-menu::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, var(--bm-line) 0%, var(--bm-line) 55%, transparent 100%);
+}
+
+.branched-menu__marker {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  z-index: 1;
+  width: 2px;
+  height: 16px;
+  border-radius: 1px;
+  background: var(--bm-accent);
+  box-shadow: 0 0 10px rgba(205,168,125,.55);
+  opacity: 0;
+  transition:
+    top 220ms var(--bm-ease-out),
+    opacity 150ms ease;
+}
+
+.branched-menu__marker[data-on] { opacity: 1; }
+
+.branched-menu__section { display: flex; flex-direction: column; }
+.branched-menu__head {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  width: 100% !important;       /* 👈 核心：撑满宽度，让点击区域和 LIBRARY 一样宽 */
+  margin: 0 !important;
+  padding: 9px 0 !important;
+  padding-left: -10000 !important;   /* 👈 核心：强制贴紧左侧竖线 */
+  text-indent: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  color: var(--bm-muted);
+  font: inherit;
+  font-size: calc(var(--bm-font) + 1px);
+  font-weight: 500;
+  letter-spacing: .01em;
+  text-align: left !important;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 200ms ease;
+}
+
+.branched-menu__section[data-open] .branched-menu__head,
+.branched-menu__head[data-active] { color: var(--bm-ink); }
+
+@media (hover: hover) and (pointer: fine) {
+  .branched-menu__head:hover { color: var(--bm-ink); }
+}
+
+.branched-menu__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--bm-fold) var(--bm-ease-out);
+}
+
+.branched-menu__section[data-open] .branched-menu__body { grid-template-rows: 1fr; }
+
+.branched-menu__fold { min-height: 0; overflow: hidden; }
+
+.branched-menu__tree {
+  position: relative;
+  padding: 6px 0;
+  box-sizing: border-box;
+}
+
+.branched-menu__lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+
+.branched-menu__section[data-open] .branched-menu__lines {
+  opacity: 1;
+  transition: opacity 250ms ease 100ms;
+}
+
+.branched-menu__base,
+.branched-menu__reach {
+  fill: none;
+  stroke-width: var(--bm-line-w);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.branched-menu__base { stroke: var(--bm-line); }
+
+.branched-menu__reach {
+  stroke: var(--bm-accent);
+  transition: stroke-dashoffset var(--bm-draw) var(--bm-ease-out);
+}
+
+.branched-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: var(--bm-row);
+  margin: 0;
+  padding: 0 8px 0 var(--bm-indent);
+  border: 0;
+  background: none;
+  color: var(--bm-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 200ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .branched-menu__item:hover { color: var(--bm-ink); }
+}
+
+.branched-menu__item[data-active] {
+  color: var(--bm-accent);
+  font-weight: 500;
+}
+
+.branched-menu__icon {
+  display: inline-flex;
+  flex: none;
+  color: currentColor;
+  opacity: .9;
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+
+.branched-menu__icon svg { width: 16px; height: 16px; display: block; }
+
+.branched-menu__item[data-active] .branched-menu__icon {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgba(205,168,125,.55));
+}
+
+.branched-menu__label { white-space: nowrap; }
+
+.branched-menu__badge {
+  margin-left: auto;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  letter-spacing: .06em;
+  color: var(--ink-3);
+  transition: color 200ms ease;
+}
+
+.branched-menu__item[data-active] .branched-menu__badge { color: var(--bm-accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .branched-menu__marker { transition: opacity 150ms ease; }
+  .branched-menu__body { transition: none; }
+  .branched-menu__reach { transition: none; }
+}
+
+.dash-body { grid-template-columns: 222px 1fr; }
+
+@media (max-width: 820px) {
+  .dash-body { grid-template-columns: 1fr; }
+  .dash-side { border-right: none; border-bottom: 1px solid rgba(190,170,255,.09); }
+  .branched-menu { width: 100%; max-width: 100%; }
+}
+/* ================= AeroShards 开场文字与转场特效 ================= */
+#aero-shards-root { position: fixed; inset: 0; z-index: 1000001; background: #0d0830; display: none; overflow: hidden; transform-origin: center center; }
+#aero-shards-root.active { display: block; }
+#aero-shards-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+
+/* 隐藏原生加载内容 */
+/* 当 WebGPU 支持时，瞬间秒杀旧开场，连一帧都不闪 */
+html.no-old-opening #loading-screen, 
+html.no-old-opening #marauder-map { 
+    display: none !important; 
+}
+/* 隐藏没用的界面元素，保证 AeroShards 加载期间屏幕干干净净 */
+html.no-old-opening #clock-HFFG,
+html.no-old-opening .watcher,
+html.no-old-opening .top-action-btns,
+html.no-old-opening .mode-toggle-btn,
+html.no-old-opening #custom-cursor,
+html.no-old-opening #custom-cursor-trail {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* 覆盖层 UI */
+#aero-ui-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    pointer-events: none;
+}
+/* 丝绸流光文字 */
+.aero-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 2.5rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-align: center;
+    margin: 0 20px;
+    background: linear-gradient(120deg, #a855f7 20%, #ffffff 50%, #6f78ff 80%, #a855f7 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: silk-shine 4s linear infinite;
+    filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4));
+    opacity: 0;
+    transform: translateY(20px);
+    animation: text-enter 2s forwards cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s, silk-shine 4s linear infinite 2.5s;
+}
+/* 每 5 秒呼吸一次的提示字 */
+.aero-tip {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9rem;
+    color: #dbe4ee;
+    margin-top: 40px;
+    letter-spacing: 0.2em;
+    opacity: 0;
+    animation: tip-breathe 5s infinite ease-in-out;
+}
+
+@keyframes silk-shine {
+    0% { background-position: 200% 0; }
+    100% { background-position: 0 0; }
+}
+@keyframes text-enter {
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes tip-breathe {
+    0%, 100% { opacity: 0.2; text-shadow: 0 0 0 rgba(168, 85, 247, 0); }
+    50% { opacity: 1; text-shadow: 0 0 10px rgba(168, 85, 247, 0.8); }
+}
+
+/* 主页面的“呼吸感显现” */
+#scene-stack, nav, main, .mode-toggle-btn, .music-player, .door-knocker, .top-action-btns {
+    transition: transform 2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2s ease, filter 2s ease;
+    transform: scale(0.92);
+    opacity: 0;
+    filter: blur(10px);
+}
+body.page-entering #scene-stack, body.page-entering nav, body.page-entering main, body.page-entering .mode-toggle-btn, body.page-entering .music-player, body.page-entering .door-knocker, body.page-entering .top-action-btns {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0px);
+}
+/* =========================================================
+   Ultra 终极重构：全宽星图 + 原生纯血 PillNav
+   ========================================================= */
+
+/* 1. 废除侧边栏，让 Dashboard 撑满全宽 */
+.dash-body {
+    display: block !important; 
+}
+.dash-main {
+    width: 100% !important;
+    padding: 24px 28px !important; 
+}
+
+/* 2. 顶部导航容器重构：居中悬浮 */
+#nav {
+    position: fixed;
+    top: 24px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    pointer-events: none; /* 让两侧空白区域不阻挡下方点击 */
+}
+
+/* 3. 胶囊本体：高级暗黑毛玻璃 */
+.pill-nav {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px 6px 16px;
+    background: rgba(20, 13, 56, 0.55);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid rgba(205, 190, 255, 0.15);
+    border-radius: 999px;
+    box-shadow: 
+        0 20px 40px -10px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 4. 左侧 Logo 区域 */
+.pill-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--frost);
+    text-decoration: none;
+    padding-right: 12px;
+    position: relative;
+}
+.pill-logo::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: rgba(205, 190, 255, 0.15);
+}
+
+/* 5. 导航菜单区域 */
+.pill-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+}
+
+/* 6. 弹簧高光药丸（指示器） */
+.pill-indicator {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #ffffff 0%, #e6e6f0 100%);
+    box-shadow: 
+        0 4px 12px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    will-change: transform, width, opacity;
+}
+
+/* 7. 导航项文字 */
+.pill-item {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(236, 232, 255, 0.65);
+    text-decoration: none;
+    border-radius: 999px;
+    transition: color 0.3s;
+    white-space: nowrap;
+}
+.pill-item:hover {
+    color: var(--frost);
+}
+/* 当高光药丸滑到文字下方时，文字变成深色以保证对比度 */
+.pill-item[data-hover="true"] {
+    color: #120a2e;
+}
+/* =========================================================
+   Ultra 重构 CSS
+   ========================================================= */
+.dash-body { display: block !important; }
+.dash-main { width: 100% !important; padding: 24px 28px !important; }
+
+#nav { position: fixed; top: 24px; left: 0; right: 0; display: flex; justify-content: center; z-index: 1000; pointer-events: none; }
+.pill-nav { pointer-events: auto; display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 16px; background: rgba(20, 13, 56, 0.55); backdrop-filter: blur(24px) saturate(1.5); border: 1px solid rgba(205, 190, 255, 0.15); border-radius: 999px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6); }
+.pill-logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 18px; color: var(--frost); text-decoration: none; padding-right: 12px; position: relative; }
+.pill-logo::after { content: ''; position: absolute; right: 0; top: 20%; height: 60%; width: 1px; background: rgba(205,190,255,0.15); }
+.pill-menu { position: relative; display: flex; align-items: center; padding: 0 4px; }
+.pill-indicator { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 999px; background: linear-gradient(180deg, #ffffff 0%, #e6e6f0 100%); box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: none; z-index: 1; opacity: 0; will-change: transform, width, opacity; }
+.pill-item { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; padding: 10px 22px; font-size: 14px; font-weight: 500; color: rgba(236,232,255,0.65); text-decoration: none; border-radius: 999px; transition: color 0.3s; white-space: nowrap; cursor: pointer; background: none; border: none; }
+.pill-item:hover { color: var(--frost); }
+.pill-item[data-hover="true"] { color: #120a2e; }
+
+/* Staggered Menu 音乐中控台 */
+.staggered-menu-wrapper { position: fixed; inset: 0; z-index: 9999; pointer-events: none; overflow: hidden; }
+.staggered-menu-wrapper[data-open] { pointer-events: none; }
+.staggered-menu-panel { pointer-events: auto; }
+.sm-prelayers { position: absolute; top: 0; right: 0; bottom: 0; width: clamp(300px, 40vw, 500px); pointer-events: none; z-index: 5; opacity: 0; }
+.staggered-menu-wrapper[data-open] .sm-prelayers { opacity: 1; }
+.sm-prelayer { position: absolute; top: 0; right: 0; height: 100%; width: 100%; transform: translateX(100%); transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); border-left: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+.staggered-menu-wrapper[data-open] .sm-prelayer:nth-child(1) { transform: translateX(0); transition-delay: 0s; }
+.staggered-menu-wrapper[data-open] .sm-prelayer:nth-child(2) { transform: translateX(0); transition-delay: 0.1s; }
+.staggered-menu-panel { 
+    position: absolute; 
+    top: 0; 
+    right: 0; 
+    width: clamp(300px, 40vw, 500px); 
+    height: 100vh; /* 👈 这里从 100% 改成了 100vh */
+    background: rgba(15, 10, 40, 0.9); 
+    backdrop-filter: blur(30px) saturate(1.8); 
+    border-left: 1px solid rgba(205,190,255,0.2); 
+    padding: 2em; 
+    display: flex; 
+    flex-direction: column; 
+    z-index: 10; 
+    transform: translateX(100%); 
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); 
+}
+.staggered-menu-wrapper[data-open] .staggered-menu-panel { transform: translateX(0); transition-delay: 0.15s; }
+.sm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: var(--frost); }
+.sm-close { background: none; border: none; color: var(--ink-3); font-size: 20px; cursor: pointer; transition: color 0.3s; }
+.sm-close:hover { color: #fff; }
+.sm-panel-list { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    overflow-y: auto; 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+    /* 👇 加上这两行！ */
+    min-height: 0; 
+    overscroll-behavior: contain; 
+}
+.sm-panel-list::-webkit-scrollbar { width: 4px; }
+.sm-panel-list::-webkit-scrollbar-thumb { background: rgba(205,190,255,0.2); border-radius: 2px; }
+.sm-song-item { padding: 12px 16px; border-radius: 10px; color: var(--ink-2); font-size: 14px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; }
+.sm-song-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.sm-song-item.active { background: rgba(111,120,255,0.15); border-color: rgba(111,120,255,0.4); color: #fff; font-weight: 500; }
+.sm-song-item[data-locked="true"] { opacity: 0.4; cursor: not-allowed; font-style: italic; }
+.sm-song-item[data-locked="true"]:hover { background: transparent; color: var(--ink-2); }
+.sm-player-controls { padding-top: 20px; border-top: 1px solid rgba(205,190,255,0.1); }
+.sm-time-row { display: flex; align-items: center; gap: 10px; font-family: 'Fira Code', monospace; font-size: 11px; color: var(--ink-3); margin-bottom: 15px; }
+.sm-time-row input[type="range"] { flex: 1; }
+.sm-btn-row { display: flex; align-items: center; justify-content: space-between; }
+.sm-ctrl-btn { background: transparent; border: none; color: var(--frost); font-size: 18px; cursor: pointer; transition: color 0.2s; }
+.sm-ctrl-btn:hover { color: var(--peri); }
+.sm-play-btn { font-size: 24px; color: var(--bronze); }
+.sm-volume-wrap { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
+.sm-volume-wrap input { width: 60px; }
+
+/* 正在播放提示条 */
+.now-playing-bar { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: rgba(20, 13, 56, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(205,190,255,0.3); border-radius: 30px; padding: 10px 24px; display: flex; align-items: center; gap: 12px; z-index: 5000; transition: bottom 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s; pointer-events: none; }
+.now-playing-bar.show { bottom: 30px; }
+.now-playing-bar.fancy { background: linear-gradient(90deg, rgba(205,168,125,0.9), rgba(111,120,255,0.9)); border-color: #fff; box-shadow: 0 0 30px rgba(205,168,125,0.8); animation: fancy-pulse 1.5s infinite alternate; }
+@keyframes fancy-pulse { 0% { filter: brightness(1); } 100% { filter: brightness(1.3); } }
+.np-icon { font-size: 16px; }
+.np-text { font-family: 'Inter Tight', sans-serif; font-size: 14px; color: #fff; font-weight: 500; }
+.np-wave { display: flex; gap: 2px; align-items: flex-end; height: 12px; }
+.np-wave span { width: 2px; background: var(--bronze); border-radius: 2px; animation: np-bounce 1s infinite alternate ease-in-out; }
+.np-wave span:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+.np-wave span:nth-child(2) { height: 100%; animation-delay: 0.3s; }
+.np-wave span:nth-child(3) { height: 60%; animation-delay: 0s; }
+.np-wave span:nth-child(4) { height: 80%; animation-delay: 0.2s; }
+@keyframes np-bounce { 0% { transform: scaleY(0.3); opacity: 0.5; } 100% { transform: scaleY(1); opacity: 1; } }
+
+/* Chill Mode */
+.chill-mode-ui { position: fixed; inset: 0; z-index: 99999; background: #0a0514; display: none; overflow: hidden; opacity: 0; transition: opacity 1s; }
+body.chill-mode .chill-mode-ui { display: block; opacity: 1; }
+body.chill-mode #nav, body.chill-mode main, body.chill-mode #scene-stack, body.chill-mode .staggered-menu-wrapper, body.chill-mode #now-playing-bar { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.5s; }
+#webthreads-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.chill-player-controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; background: rgba(10, 5, 25, 0.6); backdrop-filter: blur(20px); padding: 15px 30px; border-radius: 40px; border: 1px solid rgba(205, 168, 125, 0.3); z-index: 10; }
+.chill-ctrl-btn { background: none; border: none; color: var(--frost); font-size: 20px; cursor: pointer; margin: 0 10px; transition: color 0.2s; }
+.chill-ctrl-btn:hover { color: var(--bronze); }
+.exit-chill-btn { position: absolute; top: 40px; right: 40px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: var(--frost); padding: 10px 20px; border-radius: 20px; cursor: pointer; font-family: 'Fira Code'; font-size: 12px; z-index: 10; transition: all 0.3s; }
+.exit-chill-btn:hover { background: rgba(255,255,255,0.15); }
+/* 👇 强制修复右侧歌单无法滚动的 BUG */
+.sm-panel-inner { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 1.25rem; 
+    min-height: 0; /* 核心修复 */
+}
+
+.staggered-menu-panel {
+    height: 100vh !important; /* 强制固定高度 */
+}
+
 </style>
 </head>
 <body>
-
+<div id="aero-shards-root">
+    <div id="aero-ui-overlay">
+        <h1 class="aero-title">只要不失去你的崇高，整个世界都会为你敞开。</h1>
+        <div id="aero-tip" class="aero-tip">[ 点击任意按钮即可打开 ]</div>
+    </div>
+</div>
 <div id="loading-screen">
     <div class="loading-content">
         <svg class="loading-koi" viewBox="0 0 100 100">
@@ -480,25 +1010,7 @@ body.immersive-mode #ring-canvas { transform: scale(1); }
 
 <div id="time-greeting"><span id="greeting-text"></span></div>
 
-<div class="music-menu" id="music-menu">
-    <div class="music-content">
-        <div class="music-video-wrap">
             <audio id="local-audio-player" crossorigin="anonymous"></audio>
-            <span>🎵 LOCAL AUDIO ONLINE</span>
-        </div>
-        <div class="timeline-container">
-            <span id="current-time">0:00</span>
-            <input type="range" id="seek-bar" min="0" max="100" step="0.1" value="0">
-            <span id="duration-time">0:00</span>
-        </div>
-        <div class="song-list" id="song-list"></div>
-    </div>
-</div>
-
-<div class="music-player" id="music-btn" title="短按播放/暂停，长按展开列表">
-    <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-    <div class="music-bars"><div class="music-bar"></div><div class="music-bar"></div><div class="music-bar"></div><div class="music-bar"></div></div>
-</div>
 
 <div class="door-knocker" id="knocker">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 4v16M4 12h16"></path></svg>
@@ -532,10 +1044,23 @@ body.immersive-mode #ring-canvas { transform: scale(1); }
 </div>
 
 <nav id="nav">
-    <div class="logo"><div class="orb"></div>Patrick</div>
-    <div class="nav-links"><a href="#studio">Workspace</a><a href="#packs">Quests</a><a href="#uses">Tomes</a></div>
+    <div class="pill-nav" id="pill-nav-container">
+        <a href="#hero" class="pill-logo">
+            <div class="orb"></div>
+            Patrick
+        </a>
+        <div class="pill-menu" id="pill-menu">
+            <div class="pill-indicator" id="pill-indicator"></div>
+            <a href="#studio" class="pill-item">Workspace</a>
+            <a href="#packs" class="pill-item">Quests</a>
+            <a href="#uses" class="pill-item">Tomes</a>
+            <!-- 👇 全部塞进 pill-menu 里，去掉了所有乱七八糟的 inline style -->
+            <div class="pill-item" id="btn-open-music">🎵 Music</div>
+            <button class="pill-item" id="enter-immersive-btn">🪐 听觉模式</button>
+            <button class="pill-item" id="btn-chill-mode">☕ Chill</button>
+        </div>
+    </div>
 </nav>
-<button class="mode-toggle-btn" id="enter-immersive-btn">🪐 听觉模式</button>
 
 <main>
 <section id="hero">
@@ -571,15 +1096,6 @@ body.immersive-mode #ring-canvas { transform: scale(1); }
             <div class="dash-search">搜索 <span style="margin-left:auto; font-family:'Fira Code'">⌘K</span></div>
         </div>
         <div class="dash-body">
-            <div class="dash-side">
-                <div class="side-group">WORKSPACE</div>
-                <div class="side-item active">Dashboard</div>
-                <div class="side-item" onclick="showSealed('Quests', 'The scroll of destiny is blank. Your quests await the first stroke of ink.')">Quests <span>0</span></div>
-                <div class="side-item" onclick="showSealed('Tomes', 'The ancient knowledge is locked. The Tomes of wisdom are not yet deciphered.')">Tomes</div>
-                <div class="side-group">LIBRARY</div>
-                <div class="side-item" onclick="showSealed('Ambience', 'The halls are silent. The echoes of Ambience are still gathering.')">Ambience <span>128</span></div>
-                <div class="side-item" onclick="showSealed('Simulations', 'The sands of time are still. The Simulations have not yet begun.')">Simulations <span>42</span></div>
-            </div>
             <div class="dash-main">
                 <div class="dash-head">
                     <h3>当前状态</h3>
@@ -623,7 +1139,7 @@ body.immersive-mode #ring-canvas { transform: scale(1); }
                                 <div class="star-compass compass-w">W</div>
                                 <div class="star-tools">
                                     <button id="star-lines-btn">🔗 星座连线：显示</button>
-                                    <button id="star-lod-btn">✨ 暗星：自动隐藏</button>
+                                    <button id="star-lod-btn">✨ 暗星：全部显示</button>
                                     <button id="star-reset-btn">🔄 复位</button>
                                 </div>
                             </div>
@@ -646,7 +1162,6 @@ body.immersive-mode #ring-canvas { transform: scale(1); }
         </div>
     </div>
 </section>
-
 <section id="packs">
     <div class="split-row">
         <div class="reveal">
@@ -799,6 +1314,16 @@ perfBtn.addEventListener('click', () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+        // 🚨 如果 WebGPU 激活了，直接删掉活点地图并拦截后续所有碎裂代码
+    if (document.body.classList.contains('webgpu-active')) {
+        const map = document.getElementById('marauder-map');
+        if (map) map.remove();
+        return; 
+    }
+        // 🚨 终极拦截：如果是 WebGPU 模式，直接终止，绝不让纸片生成
+    if (document.documentElement.classList.contains('no-old-opening')) {
+        return;
+    }
     const mapScreen = document.getElementById('marauder-map');
     const textEl = document.getElementById('map-text');
     if (sessionStorage.getItem('marauder-map-shown')) {
@@ -865,12 +1390,32 @@ function showGreeting() {
 window.addEventListener('load', () => { setTimeout(showGreeting, 1500); });
 
 const TRACKS = [
-    { name: "Ambient Flow", src: './music/song1.mp3' },
-    { name: "GENSHIN", src: './music/song2.mp3' },
-    { name: "Track 03", src: './music/song3.mp3' },
-    { name: "Track 04", src: './music/song4.mp3' },
-    { name: "Track 05", src: './music/song5.mp3' },
-    { name: "Track 06", src: './music/song6.mp3' }
+    { name: "song 1", src: './music/song1.mp3' },
+    { name: "song 2", src: './music/song2.mp3' },
+    { name: "song 3", src: './music/song3.mp3' },
+    { name: "song 4", src: './music/song4.mp3' },
+    { name: "song 5", src: './music/song5.mp3' },
+    { name: "song 6", src: './music/song6.mp3' },
+    { name: "芙卡洛斯献祭", src: './music/7.mp3' },
+    { name: "哥伦比娅预告", src: './music/8.mp3' },
+    { name: "冰风组曲", src: './music/9.mp3' },
+    { name: "谐荣的旧梦", src: './music/10.mp3' },
+    { name: "昔时泪迹", src: './music/11.mp3' },
+    { name: "熠熠生辉的梦", src: './music/12.mp3' },
+    { name: "轻策庄", src: './music/13.mp3' },
+    { name: "思绪如云", src: './music/14.mp3' },
+    { name: "喧嚣的巴扎", src: './music/15.mp3' },
+    { name: "晚祷的钟声", src: './music/16.mp3' },
+    { name: "神圣的羁绊", src: './music/17.mp3' },
+    { name: "始末的微光", src: './music/18.mp3' },
+    { name: "流向永恒", src: './music/19.mp3' },
+    { name: "月光的祝福", src: './music/20.mp3' },
+    { name: "稻妻主题", src: './music/21.mp3' },
+    { name: "荣光与衰败", src: './music/22.mp3' },
+    { name: "恋人的誓言", src: './music/23.mp3' },
+    { name: "无言的悬崖", src: './music/24.mp3' },
+    { name: "枫丹", src: './music/25.mp3' },
+    { name: "随风而去 (Only By Chasing the Wind)", src: './music/26.mp3', secret: true }
 ];
 const audioEl = document.getElementById('local-audio-player');
 const musicBtn = document.getElementById('music-btn');
@@ -883,13 +1428,12 @@ const durationTimeEl = document.getElementById('duration-time');
 let currentTrackIndex = 0, isSeeking = false;
 
 TRACKS.forEach((track, index) => {
-    const btn = document.createElement('button');
-    btn.className = `song-item ${index === 0 ? 'active' : ''}`;
-    btn.innerHTML = `<span class="song-indicator"></span><span class="song-name">${track.name}</span>`;
-    btn.addEventListener('click', () => changeTrack(index));
-    songListEl.appendChild(btn);
+    // 👇 核心修复：判断下拉框存在才往里塞数据，防止报错
     if (hudSongSelect) {
-        const opt = document.createElement('option'); opt.value = index; opt.textContent = track.name; hudSongSelect.appendChild(opt);
+        const opt = document.createElement('option'); 
+        opt.value = index; 
+        opt.textContent = track.name; 
+        hudSongSelect.appendChild(opt);
     }
 });
 if (hudSongSelect) hudSongSelect.addEventListener('change', (e) => changeTrack(parseInt(e.target.value)));
@@ -915,24 +1459,6 @@ function formatTime(secs) {
     const m = Math.floor(secs / 60), s = Math.floor(secs % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
-setInterval(() => {
-    if (!isNaN(audioEl.duration) && audioEl.duration > 0 && !isSeeking) {
-        seekBar.value = (audioEl.currentTime / audioEl.duration) * 100;
-        currentTimeEl.textContent = formatTime(audioEl.currentTime);
-        durationTimeEl.textContent = formatTime(audioEl.duration);
-    }
-}, 500);
-seekBar.addEventListener('mousedown', () => isSeeking = true);
-seekBar.addEventListener('touchstart', () => isSeeking = true, {passive: true});
-seekBar.addEventListener('change', () => { if (audioEl.duration > 0) audioEl.currentTime = (seekBar.value / 100) * audioEl.duration; isSeeking = false; });
-audioEl.addEventListener('play', () => { musicBtn.classList.add('playing'); document.body.classList.add('cinema'); if (audioCtx.state === 'suspended') audioCtx.resume(); });
-audioEl.addEventListener('pause', () => { musicBtn.classList.remove('playing'); document.body.classList.remove('cinema'); });
-
-let pressTimer, isLongPress = false;
-musicBtn.addEventListener('mousedown', () => { isLongPress = false; pressTimer = setTimeout(() => { isLongPress = true; musicMenu.classList.add('active'); }, 500); });
-musicBtn.addEventListener('mouseup', () => { clearTimeout(pressTimer); if (!isLongPress) { if (audioEl.paused) { if(!audioEl.src) audioEl.src = TRACKS[0].src; if (audioCtx.state === 'suspended') audioCtx.resume(); audioEl.play(); } else { audioEl.pause(); } } });
-musicBtn.addEventListener('mouseleave', () => clearTimeout(pressTimer));
-document.addEventListener('click', (e) => { if (!musicMenu.contains(e.target) && !musicBtn.contains(e.target)) musicMenu.classList.remove('active'); });
 
 const allRiddles = [ "如果你能回到过去改变一个遗憾，但代价是抹去你现在最珍视的某段记忆，你换不换？", "如果有一滴药水能让你忘记最痛苦的事，但会带走你一半的创造力，你喝吗？", "你觉得“怀旧”是对现实的逃避，还是对自我存在的确认？", "为什么人总是对“未选择的路”念念不忘？", "如果时间不是一条线，而是一个面，你此刻的挣扎，是不是早就写好的结局？", "你最害怕失去哪一种感官？", "如果你想记住一个人，你会选择留下ta的一件物品，还是一张照片，还是一段语音？", "时间的流逝让你感到安全，还是恐慌？", "如果未来的你，给现在的你寄来一封信，你猜里面写了什么？", "你觉得人的记忆是可靠的，还是大脑每次回忆都在进行二次编造？", "如果你做过的每一件坏事，都会在未来的某天完全反弹到你所爱的人身上，你还会做吗？", "明天早上醒来，你发现自己被所有人遗忘了，你会去重新认识他们，还是开始新生活？", "有没有哪一刻，你觉得时间为了你停滞了？", "如果你只能活到明天日出，今晚你会熬夜做什么？", "你觉得什么是真正的“来不及”？", "如果写下的文字都会成真，但你永远无法修改，你敢动笔吗？", "你觉得人类最伟大的发明，和最可怕的发明，分别是什么？", "如果你能创造一种全新的颜色，你会把它涂抹在世界的什么地方？", "为什么人总是热衷于破坏自己亲手建立的东西？", "如果“美”本身就是一种诅咒，你还愿意拥抱它吗？" ];
 const modal = document.getElementById('riddle-modal');
@@ -1152,7 +1678,7 @@ const StellariumMap = {
     isDragging: false, dragMoved: false, lastX: 0, lastY: 0,
     hoveredStar: null, clickedTarget: null,
     searchedTarget: null, guideTarget: null, highlightTimer: null, animTime: 0,
-    showConstellationLines: true, showFaintAll: false,
+    showConstellationLines: true, showFaintAll: true,
     sprites: {},
     HIP_TO_NAME: {
         "32349":"Sirius","30438":"Canopus","71683":"Alpha Centauri","69673":"Arcturus","91262":"Vega","24608":"Capella","24436":"Rigel","37279":"Procyon","7588":"Achernar","27989":"Betelgeuse","68702":"Hadar","97649":"Altair","60718":"Acrux","21421":"Aldebaran","65474":"Spica","80763":"Antares","37826":"Pollux","113368":"Fomalhaut","102098":"Deneb","62434":"Mimosa","49669":"Regulus","33579":"Adhara","36850":"Castor","85927":"Shaula","25336":"Bellatrix","25428":"Elnath","45238":"Miaplacidus","26311":"Alnilam","109268":"Alnair","62956":"Alioth","54061":"Dubhe","30324":"Mirzam","34444":"Wezen","86228":"Sargas","82273":"Atria","31681":"Alhena","100751":"Peacock","15863":"Mirfak","46390":"Alphard","11767":"Polaris","67301":"Alkaid","26727":"Alnitak","25930":"Mintaka","27366":"Saiph","59774":"Megrez","58001":"Phecda","53910":"Merak","65378":"Mizar","88635":"Kaus Australis","113963":"Markab","677":"Alpheratz"
@@ -1504,7 +2030,8 @@ const StellariumMap = {
                 this.ctx.fillText(`${c.enName} · ${c.zhName}`, c.cx, c.cy - 40/this.scale);
             }
         });
-        const currentMinMag = Math.min(6, Math.max(2, 6 - (this.scale - 1) * 0.5));
+// 修正：缩小(scale小)时阈值低只显示亮星，放大(scale大)时阈值高显示暗星
+const currentMinMag = Math.min(6.5, Math.max(2.5, 2.5 + (this.scale - 1) * 0.8));
         this.stars.forEach(s => {
             const isHovered = this.hoveredStar === s;
             const isSelected = this.clickedTarget === s;
@@ -1584,6 +2111,7 @@ eggHudBtn.addEventListener('click', () => { renderEggGrid(); eggModal.classList.
 eggClose.addEventListener('click', () => eggModal.classList.remove('active'));
 eggModal.addEventListener('click', (e) => { if(e.target === eggModal) eggModal.classList.remove('active'); });
 </script>
+
 <script>
 (function() {
     const video = document.getElementById('pond-video'); const canvas = document.getElementById('pondfx'); const gl = canvas.getContext('webgl', { alpha: true, antialias: true });
@@ -2989,6 +3517,764 @@ window.speakText = function(text) {
     document.addEventListener('pointermove', (e) => { targetJellyX = e.clientX + 30; targetJellyY = e.clientY - 40; jelly.classList.add('show'); });
     function animateJelly() { if (document.hidden) { requestAnimationFrame(animateJelly); return; } jellyTime += 0.03; jellyX += (targetJellyX - jellyX) * 0.05; jellyY += (targetJellyY - jellyY) * 0.05; const floatY = Math.sin(jellyTime) * 10; const floatX = Math.cos(jellyTime * 0.7) * 5; jelly.style.left = (jellyX + floatX) + 'px'; jelly.style.top = (jellyY + floatY) + 'px'; requestAnimationFrame(animateJelly); }
     animateJelly();
+})();
+</script>
+
+<script type="module" src="./aero-shards.js"></script>
+<!-- ========================================== -->
+<!-- Ultra 满血版全新 UI 骨架注入 -->
+<!-- ========================================== -->
+
+<!-- 音乐中控台 (StaggeredMenu 原生复刻版) -->
+<div class="staggered-menu-wrapper" id="staggered-wrapper">
+    <div class="sm-prelayers" aria-hidden="true">
+        <div class="sm-prelayer" style="background: rgba(110,90,240,0.15);"></div>
+        <div class="sm-prelayer" style="background: rgba(205,168,125,0.1);"></div>
+    </div>
+    <aside class="staggered-menu-panel">
+        <div class="sm-panel-inner">
+            <div class="sm-header">
+                <h3>HOYO-MiX 歌单</h3>
+                <button id="btn-close-music" class="sm-close">✕</button>
+            </div>
+            <ul class="sm-panel-list" id="music-list-container">
+                <!-- JS 将在此处注入 26 首歌曲 -->
+            </ul>
+            
+            <!-- 播放控制器 -->
+            <div class="sm-player-controls">
+                <div class="sm-time-row">
+                    <span id="sm-current-time">0:00</span>
+                    <input type="range" id="sm-seek-bar" min="0" max="100" step="0.1" value="0">
+                    <span id="sm-duration-time">0:00</span>
+                </div>
+                <div class="sm-btn-row">
+                    <button id="sm-prev" class="sm-ctrl-btn">⏮</button>
+                    <button id="sm-play-pause" class="sm-ctrl-btn sm-play-btn">▶</button>
+                    <button id="sm-next" class="sm-ctrl-btn">⏭</button>
+                    <div class="sm-volume-wrap">
+                        🔊 <input type="range" id="sm-volume-bar" min="0" max="1" step="0.05" value="1">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<!-- 底部正在播放提示条 -->
+<div id="now-playing-bar" class="now-playing-bar">
+    <div class="np-icon">🎵</div>
+    <div class="np-text" id="np-text">正在播放</div>
+    <div class="np-wave"><span></span><span></span><span></span><span></span></div>
+</div>
+
+<!-- Chill 模式专用的 WebThreads 全屏画布 -->
+<div id="chill-mode-ui" class="chill-mode-ui">
+    <canvas id="webthreads-canvas"></canvas>
+    
+    <!-- Chill 模式底部极简控制台 -->
+    <div class="chill-player-controls">
+        <span id="chill-song-name" style="font-family:'Instrument Serif'; font-size: 18px; color: var(--bronze); margin-right: 20px;">未播放</span>
+        <button id="chill-prev" class="chill-ctrl-btn">⏮</button>
+        <button id="chill-play-pause" class="chill-ctrl-btn">▶</button>
+        <button id="chill-next" class="chill-ctrl-btn">⏭</button>
+        <input type="range" id="chill-seek-bar" min="0" max="100" step="0.1" value="0" style="width: 200px; margin: 0 15px;">
+        <span id="chill-time" style="font-family:'Fira Code'; font-size: 12px; color: var(--frost);">0:00 / 0:00</span>
+    </div>
+    
+    <!-- 退出按钮 -->
+    <button id="btn-exit-chill" class="exit-chill-btn">退出 Chill 模式</button>
+</div>
+<script>
+(function() {
+    // ==========================================
+    // 1. 顶部 PillNav 物理引擎
+    // ==========================================
+    const menu = document.getElementById('pill-menu');
+    const indicator = document.getElementById('pill-indicator');
+const items = Array.from(document.querySelectorAll('.pill-menu .pill-item'));
+    
+    if (menu && indicator) {
+        let currentX = 0, currentW = 0, targetX = 0, targetW = 0, velocityX = 0, velocityW = 0, isActive = false;
+        const stiffness = 400, damping = 30;
+        
+        function updateRect(index) {
+            const el = items[index];
+            targetX = el.offsetLeft; targetW = el.offsetWidth;
+            if (!isActive) { currentX = targetX; currentW = targetW; isActive = true; }
+        }
+        
+        items.forEach((item, index) => {
+            item.addEventListener('mouseenter', () => {
+                updateRect(index);
+                items.forEach((it, i) => it.setAttribute('data-hover', i === index ? 'true' : 'false'));
+            });
+            // 平滑滚动逻辑
+            item.addEventListener('click', (e) => {
+                const href = item.getAttribute('href');
+                if (href && href.startsWith('#') && href !== '#') {
+                    e.preventDefault();
+                    document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+        
+        menu.addEventListener('mouseleave', () => {
+            isActive = false; items.forEach(it => it.setAttribute('data-hover', 'false'));
+        });
+        
+        function animatePill() {
+            requestAnimationFrame(animatePill);
+            if (!isActive) { indicator.style.opacity = '0'; return; }
+            const forceX = -stiffness * (currentX - targetX) - damping * velocityX;
+            const forceW = -stiffness * (currentW - targetW) - damping * velocityW;
+            velocityX += forceX * 0.016; velocityW += forceW * 0.016;
+            currentX += velocityX * 0.016; currentW += velocityW * 0.016;
+            indicator.style.opacity = '1';
+            indicator.style.width = `${currentW}px`;
+            indicator.style.transform = `translateX(${currentX}px)`;
+        }
+        animatePill();
+    }
+
+    // ==========================================
+    // 2. 音乐中控台与底层音频引擎
+    // ==========================================
+    const audio = document.getElementById('local-audio-player');
+    const musicWrapper = document.getElementById('staggered-wrapper');
+    const musicList = document.getElementById('music-list-container');
+    const btnOpenMusic = document.getElementById('btn-open-music');
+    const btnCloseMusic = document.getElementById('btn-close-music');
+    
+    // UI 控制元素
+    const smPlayBtn = document.getElementById('sm-play-pause');
+    const smPrevBtn = document.getElementById('sm-prev');
+    const smNextBtn = document.getElementById('sm-next');
+    const smSeek = document.getElementById('sm-seek-bar');
+    const smVol = document.getElementById('sm-volume-bar');
+    const smCurrTime = document.getElementById('sm-current-time');
+    const smDurTime = document.getElementById('sm-duration-time');
+
+    let currentTrackIndex = 0;
+    let isUnlocked = localStorage.getItem('robin_unlocked') === 'true';
+    let nowPlayingTimeout;
+
+    // 生成列表
+    function renderMusicList() {
+        musicList.innerHTML = '';
+        TRACKS.forEach((track, i) => {
+            const li = document.createElement('li');
+            li.className = `sm-song-item ${i === currentTrackIndex ? 'active' : ''}`;
+            
+            if (track.secret && !isUnlocked) {
+                li.setAttribute('data-locked', 'true');
+                li.innerHTML = `<span>??? (Locked)</span><span>🔒</span>`;
+                li.onclick = () => alert('❌ 封印中... 尝试敲击键盘寻找线索');
+            } else {
+                li.innerHTML = `<span>${track.name}</span><span>${String(i+1).padStart(2, '0')}</span>`;
+                li.onclick = () => {
+                    changeTrack(i);
+                    closeMusicMenu();
+                };
+            }
+            musicList.appendChild(li);
+        });
+    }
+
+    function showNowPlaying(name, isFancy = false) {
+        const npBar = document.getElementById('now-playing-bar');
+        const npText = document.getElementById('np-text');
+        npText.textContent = `正在播放: ${name}`;
+        
+        npBar.classList.toggle('fancy', isFancy);
+        npBar.classList.add('show');
+        
+        clearTimeout(nowPlayingTimeout);
+        nowPlayingTimeout = setTimeout(() => {
+            npBar.classList.remove('show');
+        }, isFancy ? 6000 : 5000); // 彩蛋停留 6 秒
+    }
+
+    function changeTrack(index, fromSecret = false) {
+        if (index < 0 || index >= TRACKS.length) return;
+        currentTrackIndex = index;
+        audio.src = TRACKS[index].src;
+        
+        // 👇 核心修复：不管怎么切歌，都实时更新 Chill 模式的歌名！
+        const chillNameEl = document.getElementById('chill-song-name');
+        if (chillNameEl) chillNameEl.textContent = TRACKS[index].name;
+
+        if (fromSecret) {
+            audio.pause();
+            audio.volume = 0;
+            audio.play().then(() => {
+                let vol = 0;
+                const fade = setInterval(() => {
+                    vol += 0.05; if (vol >= 1) { vol = 1; clearInterval(fade); }
+                    audio.volume = vol;
+                }, 50);
+            });
+            showNowPlaying(TRACKS[index].name, true);
+            document.getElementById('chill-song-name').textContent = TRACKS[index].name;
+        } else {
+            audio.play();
+            showNowPlaying(TRACKS[index].name, false);
+        }
+        
+        smPlayBtn.textContent = '⏸';
+        document.getElementById('chill-play-pause').textContent = '⏸';
+        renderMusicList();
+    }
+
+    audio.addEventListener('ended', () => {
+        let next = currentTrackIndex + 1;
+        if (next >= TRACKS.length) next = 0;
+        if (TRACKS[next].secret && !isUnlocked) next = 0;
+        changeTrack(next);
+    });
+
+    // ==========================================
+    // 全局音乐控制逻辑（支持普通菜单和 Chill 模式联动）
+    // ==========================================
+    const chillPlayBtn = document.getElementById('chill-play-pause');
+    const chillSeek = document.getElementById('chill-seek-bar');
+
+    function togglePlay() {
+        if (audio.paused) { 
+            audio.play(); 
+            smPlayBtn.textContent = '⏸'; 
+            if (chillPlayBtn) chillPlayBtn.textContent = '⏸';
+        } else { 
+            audio.pause(); 
+            smPlayBtn.textContent = '▶'; 
+            if (chillPlayBtn) chillPlayBtn.textContent = '▶';
+        }
+    }
+
+    function playPrev() {
+        let prev = currentTrackIndex - 1;
+        if (prev < 0) prev = TRACKS.length - 1;
+        if (TRACKS[prev].secret && !isUnlocked) prev = 0;
+        changeTrack(prev);
+    }
+
+    function playNext() {
+        let next = currentTrackIndex + 1;
+        if (next >= TRACKS.length) next = 0;
+        if (TRACKS[next].secret && !isUnlocked) next = 0;
+        changeTrack(next);
+    }
+
+    // 绑定事件：普通菜单
+    smPlayBtn.onclick = togglePlay;
+    smPrevBtn.onclick = playPrev;
+    smNextBtn.onclick = playNext;
+    
+    // 绑定事件：Chill 模式
+    if (chillPlayBtn) chillPlayBtn.onclick = togglePlay;
+    document.getElementById('chill-prev').onclick = playPrev;
+    document.getElementById('chill-next').onclick = playNext;
+
+    // 👇 核心修复：加一个状态锁，防止定时器在拖动时抢回进度条
+    let isSeeking = false;
+
+    // 进度同步定时器
+    setInterval(() => {
+        // 如果用户正在拖动进度条，直接跳过，不要更新 UI！
+        if (isSeeking) return; 
+
+        if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+            const pct = (audio.currentTime / audio.duration) * 100;
+            if (smSeek) smSeek.value = pct;
+            if (chillSeek) chillSeek.value = pct;
+            
+            const fmt = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+            if (smCurrTime) smCurrTime.textContent = fmt(audio.currentTime);
+            if (smDurTime) smDurTime.textContent = fmt(audio.duration);
+            const chillTime = document.getElementById('chill-time');
+            if (chillTime) chillTime.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
+        }
+    }, 500);
+
+    // 进度条拖拽处理
+    const handleSeekStart = () => { isSeeking = true; }; // 按下鼠标，锁住
+    const handleSeekEnd = (e) => { 
+        if(audio.duration && isFinite(audio.duration)) {
+            audio.currentTime = (e.target.value / 100) * audio.duration; 
+        }
+        isSeeking = false; // 松开鼠标，解锁
+    };
+
+    if (smSeek) {
+        smSeek.oninput = handleSeekStart;
+        smSeek.onchange = handleSeekEnd;
+    }
+    if (chillSeek) {
+        chillSeek.oninput = handleSeekStart;
+        chillSeek.onchange = handleSeekEnd;
+    }
+    if (smVol) smVol.oninput = (e) => { audio.volume = e.target.value; };
+
+    btnOpenMusic.onclick = () => {
+        musicWrapper.setAttribute('data-open', 'true');
+        document.body.style.overflow = 'hidden'; // 👈 打开菜单时，锁死背景
+    };
+    
+    btnCloseMusic.onclick = () => closeMusicMenu();
+    
+    function closeMusicMenu() { 
+        musicWrapper.removeAttribute('data-open'); 
+        document.body.style.overflow = ''; // 👈 关闭菜单时，恢复背景
+    }
+
+    // ==========================================
+    // 3. Robin 隐藏彩蛋触发逻辑
+    // ==========================================
+    let buffer = '';
+    document.addEventListener('keydown', (e) => {
+        if(e.key.length === 1 && /[a-z]/i.test(e.key)) {
+            buffer = (buffer + e.key.toLowerCase()).slice(-10);
+            if (buffer.includes('robin')) {
+                if (!isUnlocked) {
+                    isUnlocked = true;
+                    localStorage.setItem('robin_unlocked', 'true');
+                    renderMusicList(); 
+                    
+                    if (window.triggerTap) window.triggerTap();
+                    setTimeout(() => changeTrack(25, true), 300);
+                }
+                buffer = '';
+            }
+        }
+    });
+
+    renderMusicList();
+    smVol.value = audio.volume;
+
+    // ==========================================
+    // 4. Chill 模式 & WebThreads 原生 WebGL 渲染
+    // ==========================================
+    const btnChill = document.getElementById('btn-chill-mode');
+    const btnExitChill = document.getElementById('btn-exit-chill');
+    
+    btnChill.onclick = () => {
+        document.body.classList.add('chill-mode');
+        initWebThreads();
+    };
+    
+    btnExitChill.onclick = () => {
+        document.body.classList.remove('chill-mode');
+        
+        // 👇 核心修复：退出时，直接掐断 WebGL 的渲染循环，释放 GPU 性能！
+        if (typeof webglRaf !== 'undefined' && webglRaf) {
+            cancelAnimationFrame(webglRaf);
+            webglRaf = null;
+        }
+    };
+
+    let webglRaf = null;
+    function initWebThreads() {
+        if (webglRaf) return; 
+        const container = document.getElementById('chill-mode-ui');
+        const canvas = document.getElementById('webthreads-canvas');
+        const gl = canvas.getContext('webgl2', {
+            alpha: true,
+            antialias: false,
+            depth: false,
+            stencil: false,
+            premultipliedAlpha: true,
+            powerPreference: 'high-performance'
+        });
+        if (!gl) return;
+
+        // ================= 原版 Ultra 满血着色器 =================
+        const VERTEX = `#version 300 es
+        in vec2 aPosition;
+        void main() {
+            gl_Position = vec4(aPosition, 0.0, 1.0);
+        }`;
+
+        const FRAGMENT = `#version 300 es
+        precision highp float;
+        uniform vec2 uResolution;
+        uniform float uPhase;
+        uniform float uClock;
+        uniform int uCount;
+        uniform float uFrequency;
+        uniform float uSpread;
+        uniform float uTaper;
+        uniform float uPosition;
+        uniform float uPinch;
+        uniform float uNodes;
+        uniform vec2 uAngle;
+        uniform float uGlow;
+        uniform float uFalloff;
+        uniform float uThickness;
+        uniform float uBrightness;
+        uniform float uOpacity;
+        uniform float uMirror;
+        uniform float uShimmer;
+        uniform float uDepth;
+        uniform float uPulses;
+        uniform float uFade;
+        uniform float uGrain;
+        uniform vec3 uColors[6];
+        uniform int uColorCount;
+        uniform vec3 uCore;
+        uniform vec3 uBackground;
+        uniform float uOpaque;
+        uniform float uLight;
+        uniform vec4 uIntro;
+        uniform float uFocus[24];
+        uniform vec2 uFocusState;
+        uniform vec4 uSurges[3];
+        out vec4 outColor;
+
+        const float PI = 3.14159265;
+        const float TAU = 6.28318530;
+
+        float hash(vec2 p) {
+            p = fract(p * vec2(123.34, 456.21));
+            p += dot(p, p + 45.32);
+            return fract(p.x * p.y);
+        }
+
+        float easeInOut(float t) {
+            return t < 0.5 ? 4.0 * t * t * t : 1.0 - pow(-2.0 * t + 2.0, 3.0) * 0.5;
+        }
+
+        vec3 palette(float t) {
+            if (uColorCount <= 1) return uColors[0];
+            float scaled = clamp(t, 0.0, 1.0) * float(uColorCount - 1);
+            int index = int(min(floor(scaled), float(uColorCount - 2)));
+            return mix(uColors[index], uColors[index + 1], scaled - float(index));
+        }
+
+        vec2 envelope(float x) {
+            float dx = x - uPinch;
+            if (uNodes <= 1.0) return vec2(uSpread * abs(dx), uSpread * sign(dx));
+            float k = PI * uNodes;
+            float c = cos(k * (dx + 0.5));
+            return vec2(uSpread * 0.5 * abs(c), -uSpread * 0.5 * k * sin(k * (dx + 0.5)) * sign(c));
+        }
+
+        vec2 space(vec2 p, float aspect) {
+            vec2 q = (p - 0.5) * vec2(aspect, 1.0);
+            q = vec2(q.x * uAngle.x + q.y * uAngle.y, -q.x * uAngle.y + q.y * uAngle.x);
+            return vec2(q.x / aspect + 0.5, q.y + 0.5);
+        }
+
+        float hubAt(float x) {
+            if (uNodes <= 1.0) return uPinch;
+            float spacing = 1.0 / uNodes;
+            return uPinch - 0.5 + (floor((x - uPinch + 0.5) / spacing) + 0.5) * spacing;
+        }
+
+        vec3 thread(float x, float i, float n) {
+            float lane = uNodes <= 1.0 ? x - uPinch : (x - uPinch + 0.5) * uNodes - 0.5;
+            float side = uMirror > 0.5 ? (mod(floor(lane), 2.0) < 0.5 ? -1.0 : 1.0) : 1.0;
+            vec2 env = envelope(x);
+            float amp = 1.0 + i * uTaper;
+            float shimmer = uShimmer > 0.5 ? sin(uClock * 1.7 + i * 1.3) * 0.35 : 0.0;
+            float angle = x * uFrequency + (uPhase + i * TAU / max(n, 1.0)) * side + shimmer;
+            float wave = sin(angle);
+            float y = uPosition - env.x * amp * wave;
+            float slope = -(env.y * amp * wave + env.x * amp * cos(angle) * uFrequency);
+            return vec3(y, slope, angle);
+        }
+
+        void main() {
+            vec2 p = gl_FragCoord.xy / uResolution;
+            float aspect = uResolution.x / uResolution.y;
+            vec2 s = space(p, aspect);
+            float x = s.x;
+            float y = s.y;
+            float n = float(uCount);
+            float pixel = 1.0 / uResolution.y;
+            float hub = hubAt(x);
+            float presence = uFocusState.x;
+            float settle = uFocusState.y;
+
+            vec3 color = vec3(0.0);
+            float energy = 0.0;
+            float ink = 0.0;
+            vec3 inkColor = vec3(0.0);
+
+            for (int idx = 0; idx < 24; idx++) {
+                if (idx >= uCount) break;
+                float i = float(idx);
+                float ci = n > 1.0 ? i / (n - 1.0) : 0.0;
+
+                float head = 2.0;
+                float bead = 0.0;
+                float born = 1.0;
+                if (uIntro.w > 0.5) {
+                    float progress = clamp((uIntro.x - i * uIntro.y) / uIntro.z, 0.0, 1.0);
+                    head = mix(-0.06, 1.06, easeInOut(progress));
+                    bead = sin(PI * progress);
+                    born = progress > 0.0 ? smoothstep(-0.05, 0.03, head) : 0.0;
+                }
+                if (born <= 0.0) continue;
+
+                bool tip = x > head;
+                vec3 lead = bead > 0.0 || tip ? thread(head, i, n) : vec3(0.0);
+                vec3 t = tip ? lead : thread(x, i, n);
+
+                float focus = uFocus[idx];
+                float spot = tip ? head : x;
+                float twist = uDepth * smoothstep(0.0, 0.07, abs(spot - hubAt(spot)));
+                float depth = 0.5 + 0.5 * cos(t.z);
+                float front = mix(1.0, 0.3 + 0.7 * depth, twist);
+                float width = uThickness * mix(1.0, 0.55 + 0.7 * depth, twist) * (1.0 + 0.3 * focus * presence);
+
+                float d;
+                if (tip) {
+                    float back = head - 0.02;
+                    vec2 a = vec2(back * aspect, thread(back, i, n).x);
+                    vec2 b = vec2(head * aspect, lead.x);
+                    vec2 pa = vec2(x * aspect, y) - a;
+                    vec2 ba = b - a;
+                    d = length(pa - ba * clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0));
+                } else {
+                    float bend = t.y * smoothstep(0.0, 0.04, abs(x - hub));
+                    d = abs(y - t.x) / sqrt(1.0 + bend * bend / (aspect * aspect));
+                }
+                float g = uGlow / pow(max(d / width, pixel * 0.35), uFalloff) * front * born;
+                float onLine = exp(-d / (width * 0.012));
+
+                if (bead > 0.0) {
+                    vec2 near = vec2((x - head) * aspect, y - lead.x);
+                    g *= 1.0 + bead * 1.6 * exp(-dot(near, near) / 0.0025);
+                }
+
+                float light = 0.0;
+                for (int k = 0; k < 3; k++) {
+                    vec4 surge = uSurges[k];
+                    if (surge.w <= 0.0) continue;
+                    float progress = clamp((surge.y - i * 0.05) / 1.6, 0.0, 1.0);
+                    if (progress <= 0.0 || progress >= 1.0) continue;
+                    float lead = mix(surge.x, surge.z > 0.0 ? 1.12 : -0.12, easeInOut(progress));
+                    float along = (x - lead) * surge.z * aspect;
+                    float trail = along < 0.0 ? exp(along / 0.24) : exp(-along * along / 0.0009);
+                    light += trail * sin(PI * progress);
+                }
+                g *= 1.0 + light * (0.12 + 2.8 * onLine);
+
+                if (uPulses > 0.0) {
+                    float travel = abs(x - hub);
+                    float pulse = pow(0.5 + 0.5 * sin(travel * 16.0 + uClock * 2.2 + i * 1.9), 24.0);
+                    g *= 1.0 + uPulses * 5.0 * pulse * onLine;
+                }
+
+                float sheen = pow(0.5 + 0.5 * sin(abs(x - hub) * 11.0 + uClock * 1.4), 10.0);
+                float lift = focus * presence;
+                g *= (1.0 - settle * (1.0 - focus)) * (1.0 + lift * (0.9 + 1.4 * sheen * onLine));
+
+                vec3 tint = mix(palette(ci), uCore, 0.3 * lift);
+                color += g * tint;
+                energy += g;
+                float stroke = smoothstep(0.45, 1.3, g);
+                inkColor += tint * stroke;
+                ink += stroke;
+            }
+
+            float fade = 1.0;
+            if (uFade > 0.0) {
+                float edge = min(x, 1.0 - x);
+                float f = clamp(edge / max(uFade * 0.5, 0.001), 0.0, 1.0);
+                fade = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+            }
+            float core = smoothstep(0.5, 2.2, energy);
+            color = mix(color, uCore * energy, core * 0.5);
+            color *= uBrightness * fade;
+            float alpha = clamp(energy * fade, 0.0, 1.0) * uOpacity;
+            float grain = (hash(gl_FragCoord.xy + fract(uClock) * 97.0) - 0.5) * uGrain;
+
+            vec3 rgb = max(color * alpha * (1.0 + grain * 2.0), 0.0);
+            outColor = vec4(rgb, alpha);
+        }`;
+
+        // ================= 编译与初始化 =================
+        const compile = (type, source) => {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        };
+
+        const vertex = compile(gl.VERTEX_SHADER, VERTEX);
+        const fragment = compile(gl.FRAGMENT_SHADER, FRAGMENT);
+        const program = gl.createProgram();
+        gl.attachShader(program, vertex);
+        gl.attachShader(program, fragment);
+        gl.bindAttribLocation(program, 0, 'aPosition');
+        gl.linkProgram(program);
+        gl.deleteShader(vertex);
+        gl.deleteShader(fragment);
+        gl.useProgram(program);
+
+        const names = [
+            'uResolution', 'uPhase', 'uClock', 'uCount', 'uFrequency', 'uSpread', 'uTaper',
+            'uPosition', 'uPinch', 'uNodes', 'uAngle', 'uGlow', 'uFalloff', 'uThickness',
+            'uBrightness', 'uOpacity', 'uMirror', 'uShimmer', 'uDepth', 'uPulses', 'uFade',
+            'uGrain', 'uColors', 'uColorCount', 'uCore', 'uBackground', 'uOpaque', 'uLight',
+            'uIntro', 'uFocus', 'uFocusState', 'uSurges'
+        ];
+        const u = {};
+        names.forEach(name => u[name] = gl.getUniformLocation(program, name));
+
+        const vao = gl.createVertexArray();
+        gl.bindVertexArray(vao);
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+        // ================= 参数设置 (Ultra版) =================
+        const settings = {
+            count: 6, speed: 0.2, frequency: 5, spread: 0.18, taper: 1, position: 0.5,
+            pinch: 0.5, nodes: 1, angle: 0, glow: 0.02, falloff: 0.6, thickness: 1.1,
+            brightness: 0.6, opacity: 1, depth: 0, pulses: 0, mirror: true, shimmer: false,
+            fade: 0, grain: 0.05, mouseInteraction: true, mouseStrength: 0.5, pulseOnClick: true
+        };
+        
+        const colorData = new Float32Array(6 * 3);
+        colorData.set([0.32, 0.15, 1.0, 1.0, 0.62, 0.98]); // 紫蓝到粉红
+        gl.uniform3fv(u.uColors, colorData);
+        gl.uniform1i(u.uColorCount, 2);
+        gl.uniform3f(u.uCore, 1.0, 1.0, 1.0);
+        gl.uniform3f(u.uBackground, 0.0, 0.0, 0.0);
+        gl.uniform1f(u.uOpaque, 0.0);
+        gl.uniform1f(u.uLight, 0.0);
+
+        const surgeData = new Float32Array(3 * 4);
+        const focusArr = new Float32Array(24);
+        const state = { width: 1, height: 1, phase: 0, clock: 0, last: 0, introAt: -1, inside: false, pointer: [0.5, 0.5], target: -1, surges: [] };
+
+        const resize = () => {
+            const dpr = window.devicePixelRatio || 1;
+            state.width = container.clientWidth * dpr;
+            state.height = container.clientHeight * dpr;
+            canvas.width = state.width;
+            canvas.height = state.height;
+            gl.viewport(0, 0, state.width, state.height);
+            gl.uniform2f(u.uResolution, state.width, state.height);
+        };
+        window.addEventListener('resize', resize);
+        resize();
+
+        // ================= 物理与数学逻辑 =================
+        const threadY = (x, index) => {
+            const lane = x - settings.pinch;
+            const side = settings.mirror ? (Math.floor(lane) % 2 < 0.5 ? -1 : 1) : 1;
+            const env = settings.spread * Math.abs(x - settings.pinch);
+            const angle = x * settings.frequency + (state.phase + (index * Math.PI * 2) / settings.count) * side;
+            return settings.position - env * (1 + index * settings.taper) * Math.sin(angle);
+        };
+
+        const updateFocus = (dt) => {
+            const wanted = settings.mouseInteraction && state.inside;
+            if (wanted) {
+                const [cx, cy] = state.pointer;
+                let best = -1; let bestDist = Infinity;
+                for (let i = 0; i < settings.count; i++) {
+                    const dist = Math.abs(threadY(cx, i) - cy);
+                    if (dist < 0.15 && dist < bestDist) { best = i; bestDist = dist; }
+                }
+                state.target = best;
+            } else state.target = -1;
+
+            let strongest = 0;
+            for (let i = 0; i < 24; i++) {
+                const goal = i === state.target ? 1 : 0;
+                focusArr[i] += (goal - focusArr[i]) * (1 - Math.exp(-dt / 0.22));
+                if (focusArr[i] > strongest) strongest = focusArr[i];
+            }
+            return strongest;
+        };
+
+        // ================= 渲染循环 =================
+        function render(now) {
+            webglRaf = requestAnimationFrame(render);
+            const dt = state.last ? Math.min((now - state.last) / 1000, 0.1) : 1/60;
+            state.last = now;
+            state.clock += dt;
+            if (state.introAt < 0) state.introAt = state.clock;
+            state.phase += dt * settings.speed;
+
+            const focusing = updateFocus(dt);
+
+            // 处理点击脉冲
+            state.surges = state.surges.filter(s => state.clock - s.at < 1.6 + settings.count * 0.05);
+            surgeData.fill(0);
+            state.surges.slice(-3).forEach((s, idx) => {
+                surgeData.set([s.x, state.clock - s.at, s.direction, 1], idx * 4);
+            });
+
+            // 传参
+            gl.uniform1f(u.uPhase, state.phase);
+            gl.uniform1f(u.uClock, state.clock);
+            gl.uniform1i(u.uCount, settings.count);
+            gl.uniform1f(u.uFrequency, settings.frequency);
+            gl.uniform1f(u.uSpread, settings.spread);
+            gl.uniform1f(u.uTaper, settings.taper);
+            gl.uniform1f(u.uPosition, settings.position);
+            gl.uniform1f(u.uPinch, settings.pinch);
+            gl.uniform1f(u.uNodes, settings.nodes);
+            gl.uniform2f(u.uAngle, Math.cos(settings.angle), Math.sin(settings.angle));
+            gl.uniform1f(u.uGlow, settings.glow * Math.sqrt(6 / Math.max(settings.count, 6)));
+            gl.uniform1f(u.uFalloff, settings.falloff);
+            gl.uniform1f(u.uThickness, settings.thickness);
+            gl.uniform1f(u.uBrightness, settings.brightness);
+            gl.uniform1f(u.uOpacity, settings.opacity);
+            gl.uniform1f(u.uMirror, settings.mirror ? 1 : 0);
+            gl.uniform1f(u.uShimmer, settings.shimmer ? 1 : 0);
+            gl.uniform1f(u.uDepth, settings.depth);
+            gl.uniform1f(u.uPulses, settings.pulses);
+            gl.uniform1f(u.uFade, settings.fade);
+            gl.uniform1f(u.uGrain, settings.grain);
+            
+            // 进场动画传参
+            const introClock = state.introAt < 0 ? 0 : state.clock - state.introAt;
+            const introLength = (settings.count - 1) * Math.min(0.12, 0.9 / Math.max(settings.count - 1, 1)) + 1.25;
+            const introRunning = introClock < introLength;
+            gl.uniform4f(u.uIntro, introClock, Math.min(0.12, 0.9 / Math.max(settings.count - 1, 1)), 1.25, introRunning ? 1 : 0);
+            
+            gl.uniform1fv(u.uFocus, focusArr);
+            gl.uniform2f(u.uFocusState, focusing, 0);
+            gl.uniform4fv(u.uSurges, surgeData);
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+
+        // ================= 事件监听 =================
+        container.addEventListener('pointermove', e => {
+            const rect = container.getBoundingClientRect();
+            state.pointer = [(e.clientX - rect.left) / rect.width, 1.0 - (e.clientY - rect.top) / rect.height];
+            state.inside = true;
+        });
+        
+        container.addEventListener('pointerleave', () => { state.inside = false; });
+        
+        container.addEventListener('pointerdown', e => {
+            if (!settings.pulseOnClick) return;
+            const rect = container.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            state.surges.push({ x, direction: x <= 0.5 ? 1 : -1, at: state.clock });
+            if (state.surges.length > 3) state.surges.shift();
+        });
+
+        render(performance.now());
+    }
 })();
 </script>
 </body>
