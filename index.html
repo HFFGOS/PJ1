@@ -919,10 +919,65 @@ body.chill-mode #nav, body.chill-mode main, body.chill-mode #scene-stack, body.c
 .staggered-menu-panel {
     height: 100vh !important; /* 强制固定高度 */
 }
+#cinematic-vignette {
+    position: fixed; inset: 0; z-index: 99990; pointer-events: none;
+    background: radial-gradient(circle at center, rgba(0,0,0,0) 10%, rgba(0,0,0,0.95) 80%, #000 100%);
+    opacity: 0;
+    /* 默认退场动画：极慢的 8 秒淡出 */
+    transition: opacity 8s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+/* 入场：平滑拉满暗角（2秒） */
+#cinematic-vignette.active {
+    opacity: 1; 
+    transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+/* 缓慢退场类 */
+#cinematic-vignette.leaving {
+    opacity: 0;
+    transition: opacity 8s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+/* ================= 满血版烟花画布 ================= */
+#ultra-fireworks-canvas {
+    position: fixed; inset: 0; width: 100%; height: 100%; z-index: 99991;
+    pointer-events: none; opacity: 0; transition: opacity 0.5s;
+}
+#ultra-fireworks-canvas.active { opacity: 1; }
+
+/* ================= FoldText 百叶窗成就系统 ================= */
+#achievement-container {
+    position: fixed; inset: 0; z-index: 99999; display: flex; justify-content: center; align-items: center;
+    pointer-events: none; perspective: 700px; opacity: 0;
+}
+#achievement-container.show { opacity: 1; }
+
+.fold-text {
+    display: flex; justify-content: center; color: #fff;
+    font-family: 'Instrument Serif', 'FZSong', serif; font-style: italic;
+    font-size: clamp(2rem, 5vw, 4rem); font-weight: 800; line-height: 1.2;
+    letter-spacing: 0.05em; text-shadow: 0 0 20px rgba(255,255,255,0.4);
+    white-space: nowrap;
+}
+
+.fold-text-segment { display: inline-block; perspective: 700px; vertical-align: baseline; }
+.fold-text-piece { position: relative; display: inline-block; transform-style: preserve-3d; }
+
+/* 百叶窗上下两片叶子 */
+.fold-text-slat { position: relative; display: inline-block; backface-visibility: hidden; transform-origin: 50% 25%; }
+.fold-text-slat[data-fold-slat="b"] { position: absolute; inset: 0; transform-origin: 50% 75%; }
+
+/* 折叠时的明暗阴影 */
+.fold-text-piece::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: rgba(0,0,0,0.6); opacity: 0; }
 </style>
 </head>
 <body>
+
+    <!-- 成就系统与暗角、烟花骨架 (必须放在主脚本之前) -->
+    <div id="cinematic-vignette"></div>
+    <canvas id="ultra-fireworks-canvas"></canvas>
+    <div id="achievement-container">
+        <div class="fold-text" id="achievement-text"></div>
+    </div>
 <div id="aero-shards-root">
     <div id="aero-ui-overlay">
         <h1 class="aero-title">只要不失去你的崇高，整个世界都会为你敞开。</h1>
@@ -1010,7 +1065,7 @@ body.chill-mode #nav, body.chill-mode main, body.chill-mode #scene-stack, body.c
 
 <div id="time-greeting"><span id="greeting-text"></span></div>
 
-            <audio id="local-audio-player" crossorigin="anonymous"></audio>
+            <audio id="local-audio-player"></audio>
 
 <div class="door-knocker" id="knocker">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 4v16M4 12h16"></path></svg>
@@ -1415,7 +1470,8 @@ const TRACKS = [
     { name: "恋人的誓言", src: './music/23.mp3' },
     { name: "无言的悬崖", src: './music/24.mp3' },
     { name: "枫丹", src: './music/25.mp3' },
-    { name: "随风而去 (Only By Chasing the Wind)", src: './music/26.mp3', secret: true }
+    { name: "随风而去 (Only By Chasing the Wind)", src: './music/26.mp3', secret: 'robin' },
+    { name: "寒光裂濤", src: './music/27.mp3', secret: 'genshin' }
 ];
 const audioEl = document.getElementById('local-audio-player');
 const musicBtn = document.getElementById('music-btn');
@@ -4033,7 +4089,7 @@ const items = Array.from(document.querySelectorAll('.pill-menu .pill-item'));
     const smDurTime = document.getElementById('sm-duration-time');
 
     let currentTrackIndex = 0;
-    let isUnlocked = localStorage.getItem('robin_unlocked') === 'true';
+let unlockedSecrets = JSON.parse(localStorage.getItem('unlocked_secrets') || '[]');
     let nowPlayingTimeout;
 
     // 生成列表
@@ -4043,7 +4099,7 @@ const items = Array.from(document.querySelectorAll('.pill-menu .pill-item'));
             const li = document.createElement('li');
             li.className = `sm-song-item ${i === currentTrackIndex ? 'active' : ''}`;
             
-            if (track.secret && !isUnlocked) {
+            if (track.secret && !unlockedSecrets.includes(track.secret)) {
                 li.setAttribute('data-locked', 'true');
                 li.innerHTML = `<span>??? (Locked)</span><span>🔒</span>`;
                 li.onclick = () => alert('❌ 封印中... 尝试敲击键盘寻找线索');
@@ -4082,19 +4138,27 @@ const items = Array.from(document.querySelectorAll('.pill-menu .pill-item'));
         if (chillNameEl) chillNameEl.textContent = TRACKS[index].name;
 
         if (fromSecret) {
+            // 👈 核心修复：强制唤醒音频引擎
+            if (window.localAudioCtx && window.localAudioCtx.state === 'suspended') {
+                window.localAudioCtx.resume();
+            }
+            
             audio.pause();
             audio.volume = 0;
             audio.play().then(() => {
                 let vol = 0;
                 const fade = setInterval(() => {
-                    vol += 0.05; if (vol >= 1) { vol = 1; clearInterval(fade); }
+                    vol += 0.05; 
+                    if (vol >= 1) { vol = 1; clearInterval(fade); }
                     audio.volume = vol;
                 }, 50);
-            });
+            }).catch(err => console.warn("彩蛋音乐播放被拦截:", err)); // 👈 核心修复：捕获报错
+            
             showNowPlaying(TRACKS[index].name, true);
             document.getElementById('chill-song-name').textContent = TRACKS[index].name;
         } else {
-            audio.play();
+                        if (window.localAudioCtx && window.localAudioCtx.state === 'suspended') window.localAudioCtx.resume();
+            audio.play().catch(e => console.log("切歌被浏览器拦截", e));
             showNowPlaying(TRACKS[index].name, false);
         }
         
@@ -4117,10 +4181,19 @@ const items = Array.from(document.querySelectorAll('.pill-menu .pill-item'));
     const chillSeek = document.getElementById('chill-seek-bar');
 
     function togglePlay() {
+        // 核心修复：每次点击播放时，强行唤醒 AudioContext
+        if (window.localAudioCtx && window.localAudioCtx.state === 'suspended') {
+            window.localAudioCtx.resume();
+        }
+        
         if (audio.paused) { 
-            audio.play(); 
-            smPlayBtn.textContent = '⏸'; 
-            if (chillPlayBtn) chillPlayBtn.textContent = '⏸';
+            audio.play().then(() => {
+                smPlayBtn.textContent = '⏸'; 
+                if (chillPlayBtn) chillPlayBtn.textContent = '⏸';
+            }).catch(err => {
+                console.error("播放被拦截:", err);
+                alert("浏览器阻止了播放，请再点一次！");
+            });
         } else { 
             audio.pause(); 
             smPlayBtn.textContent = '▶'; 
@@ -4204,26 +4277,243 @@ const items = Array.from(document.querySelectorAll('.pill-menu .pill-item'));
         document.body.style.overflow = ''; // 👈 关闭菜单时，恢复背景
     }
 
-    // ==========================================
-    // 3. Robin 隐藏彩蛋触发逻辑
-    // ==========================================
-    let buffer = '';
-    document.addEventListener('keydown', (e) => {
-        if(e.key.length === 1 && /[a-z]/i.test(e.key)) {
-            buffer = (buffer + e.key.toLowerCase()).slice(-10);
-            if (buffer.includes('robin')) {
-                if (!isUnlocked) {
-                    isUnlocked = true;
-                    localStorage.setItem('robin_unlocked', 'true');
-                    renderMusicList(); 
-                    
-                    if (window.triggerTap) window.triggerTap();
-                    setTimeout(() => changeTrack(25, true), 300);
-                }
-                buffer = '';
+// ==========================================
+// 3. Ultra 终极彩蛋与特效引擎
+// ==========================================
+
+// --- 模块 A：原生百叶窗 FoldText 引擎 ---
+function showAchievement(text) {
+    const container = document.getElementById('achievement-container');
+    const textContainer = document.getElementById('achievement-text');
+    if (!container || !textContainer) return;
+    
+    textContainer.innerHTML = '';
+    container.classList.add('show');
+
+    const chars = Array.from(text);
+    chars.forEach((char, index) => {
+        const seg = document.createElement('span'); seg.className = 'fold-text-segment';
+        const piece = document.createElement('span'); piece.className = 'fold-text-piece';
+        const topSlat = document.createElement('span'); topSlat.className = 'fold-text-slat'; topSlat.textContent = char;
+        const botSlat = document.createElement('span'); botSlat.className = 'fold-text-slat'; botSlat.setAttribute('data-fold-slat', 'b'); botSlat.textContent = char;
+        
+        // 1. 初始状态：折叠隐藏
+        topSlat.style.transform = 'rotateX(-92deg)';
+        botSlat.style.transform = 'rotateX(-92deg)';
+        piece.style.opacity = '0';
+
+        // 2. 纯原生动画：展开 (交错延迟)
+        setTimeout(() => {
+            piece.style.opacity = '1';
+            topSlat.style.transition = 'transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            botSlat.style.transition = 'transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            topSlat.style.transform = 'rotateX(0deg)';
+            botSlat.style.transform = 'rotateX(0deg)';
+        }, index * 45);
+
+        piece.appendChild(topSlat); piece.appendChild(botSlat);
+        seg.appendChild(piece); textContainer.appendChild(seg);
+    });
+
+    // 3. 3.5 秒后折叠收回并隐藏
+    setTimeout(() => {
+        const slats = textContainer.querySelectorAll('.fold-text-slat');
+        slats.forEach((slat) => {
+            slat.style.transition = 'transform 0.4s cubic-bezier(0.8, 0, 0.2, 1)';
+            slat.style.transform = 'rotateX(-92deg)';
+        });
+        setTimeout(() => { container.classList.remove('show'); }, 600);
+    }, 3500);
+}
+
+// --- 模块 B：满血版火箭升空慢动作烟花 ---
+const UltraFireworks = (() => {
+    const canvas = document.getElementById('ultra-fireworks-canvas');
+    if (!canvas) return { play: () => {} };
+    const ctx = canvas.getContext('2d');
+    let rockets = [], particles = [], animationId = null, isRunning = false, onCompleteCallback = null;
+    let width = window.innerWidth, height = window.innerHeight;
+
+    window.addEventListener('resize', () => { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; });
+
+    class Rocket {
+        constructor(tx, ty) {
+            this.x = tx + (Math.random() - 0.5) * 100;
+            this.y = height; 
+            this.tx = tx;
+            this.ty = ty;
+            const angle = Math.atan2(ty - this.y, tx - this.x);
+            const speed = Math.random() * 2 + 9; 
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.color = this.getRandomColor();
+            this.trail = [];
+            this.dead = false;
+        }
+        getRandomColor() {
+            const colors = ['255, 215, 0', '138, 43, 226', '0, 255, 255', '255, 105, 180', '255, 255, 255'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        update() {
+            this.vx *= 0.98;
+            this.vy *= 0.98;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.trail.push({ x: this.x, y: this.y });
+            if (this.trail.length > 8) this.trail.shift();
+            if (this.vy > -0.5 || this.y < this.ty) {
+                this.dead = true;
+                fireBurst(this.x, this.y, this.color);
             }
         }
-    });
+        draw() {
+            for (let i = 0; i < this.trail.length; i++) {
+                const p = this.trail[i];
+                const alpha = (i / this.trail.length) * 0.6;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`; ctx.fill();
+            }
+            ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${this.color}, 1)`; ctx.fill();
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y; this.color = color;
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 4 + 1; 
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.life = 1;
+            this.decay = Math.random() * 0.002 + 0.0015; 
+            this.gravity = 0.03; 
+            this.drag = 0.985; 
+            this.size = Math.random() * 2 + 1;
+        }
+        update() {
+            this.vx *= this.drag; this.vy *= this.drag; 
+            this.vy += this.gravity;
+            this.x += this.vx; this.y += this.vy; 
+            this.life -= this.decay;
+        }
+        draw() {
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${this.color}, ${this.life})`; ctx.fill();
+        }
+    }
+
+    function fireBurst(x, y, color) {
+        const count = Math.floor(Math.random() * 60) + 80;
+        for (let i = 0; i < count; i++) {
+            particles.push(new Particle(x, y, color));
+        }
+    }
+
+    let hasFired = false; 
+    function loop() {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = 'lighter';
+        
+        for (let i = rockets.length - 1; i >= 0; i--) {
+            const r = rockets[i]; r.update(); r.draw();
+            if (r.dead) rockets.splice(i, 1);
+        }
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i]; p.update(); p.draw();
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        if (hasFired && rockets.length === 0 && particles.length === 0) { stop(); return; }
+        animationId = requestAnimationFrame(loop);
+    }
+
+    function start() {
+        canvas.width = width; canvas.height = height;
+        canvas.classList.add('active');
+        rockets = []; particles = []; isRunning = true; hasFired = false;
+
+        const targets = [
+            { x: width * 0.5, y: height * 0.3, delay: 200 },
+            { x: width * 0.3, y: height * 0.4, delay: 1500 },
+            { x: width * 0.7, y: height * 0.35, delay: 3000 },
+            { x: width * 0.4, y: height * 0.2, delay: 4500 },
+            { x: width * 0.6, y: height * 0.25, delay: 6000 }
+        ];
+
+        targets.forEach(t => {
+            setTimeout(() => {
+                if (isRunning) { rockets.push(new Rocket(t.x, t.y)); hasFired = true; }
+            }, t.delay);
+        });
+        if (!animationId) loop();
+    }
+
+    function stop() {
+        isRunning = false; cancelAnimationFrame(animationId); animationId = null;
+        canvas.classList.remove('active'); ctx.clearRect(0, 0, width, height);
+        if (onCompleteCallback) onCompleteCallback();
+    }
+
+    return { play: (callback) => { onCompleteCallback = callback; start(); } };
+})();
+// --- 模块 C：键盘监听与暗角触发编排 ---
+const vignette = document.getElementById('cinematic-vignette');
+let buffer = '';
+
+document.addEventListener('keydown', (e) => {
+    if(e.key.length === 1 && /[a-z]/i.test(e.key)) {
+        buffer = (buffer + e.key.toLowerCase()).slice(-10);
+        
+        // 彩蛋 1：Robin (无限次触发特效，但只解锁一次)
+        if (buffer.includes('robin')) {
+            if (!unlockedSecrets.includes('robin')) {
+                unlockedSecrets.push('robin');
+                localStorage.setItem('unlocked_secrets', JSON.stringify(unlockedSecrets));
+                renderMusicList(); 
+            }
+            if (vignette) vignette.classList.remove('leaving'); // 👈 加上这行，强制清空退场状态
+            if (vignette) vignette.classList.add('active');
+            changeTrack(25, true); // 同步切歌，去掉 setTimeout
+UltraFireworks.play(() => { 
+    if (vignette) {
+        vignette.classList.remove('active'); 
+        vignette.classList.add('leaving'); 
+        setTimeout(() => vignette.classList.remove('leaving'), 8000); 
+    }
+});
+            try {
+                showAchievement("如知更鸟一般，只为歌唱而歌唱");
+            } catch(err) { console.warn("GSAP 异常", err); }
+            buffer = '';
+        }
+
+        // 彩蛋 2：Genshin (无限次触发特效，但只解锁一次)
+        if (buffer.includes('genshin')) {
+            if (!unlockedSecrets.includes('genshin')) {
+                unlockedSecrets.push('genshin');
+                localStorage.setItem('unlocked_secrets', JSON.stringify(unlockedSecrets));
+                renderMusicList(); 
+            }
+            if (vignette) vignette.classList.remove('leaving'); // 👈 加上这行，强制清空退场状态
+            if (vignette) vignette.classList.add('active');
+            changeTrack(26, true); // 同步切歌，去掉 setTimeout
+            UltraFireworks.play(() => { 
+    if (vignette) {
+        vignette.classList.remove('active'); 
+        vignette.classList.add('leaving'); 
+        setTimeout(() => vignette.classList.remove('leaving'), 8000); 
+    }
+});
+            try {
+                showAchievement("神的孩子全跳舞");
+            } catch(err) { console.warn("GSAP 异常", err); }
+            buffer = '';
+        }
+    }
+});
 
     renderMusicList();
     smVol.value = audio.volume;
