@@ -968,6 +968,33 @@ body.chill-mode #nav, body.chill-mode main, body.chill-mode #scene-stack, body.c
 
 /* 折叠时的明暗阴影 */
 .fold-text-piece::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: rgba(0,0,0,0.6); opacity: 0; }
+    /* =========================================
+   iPad / iOS Safari 音乐面板高度修复补丁
+   ========================================= */
+   
+/* 1. 覆盖旧的死高度，改用动态视口高度 (dvh) 并加上安全区 */
+.staggered-menu-panel {
+    height: 100vh !important; /* 旧版浏览器回退 */
+    height: 100dvh !important; /* 现代浏览器：动态适应地址栏伸缩 */
+    /* 底部内边距加上安全区，防止被 iPad 底部的横条挡住 */
+    padding-bottom: calc(2em + env(safe-area-inset-bottom)) !important; 
+}
+
+/* 2. 确保播放控制器能在最底部正常显示，且不被挤压 */
+.sm-player-controls {
+    margin-top: auto; /* 把它推到面板的最底部 */
+    flex-shrink: 0;   /* 防止被上面的长歌单挤扁 */
+    padding-top: 20px;
+    padding-bottom: 10px; /* 稍微给点底部缓冲 */
+}
+
+/* 3. 确保歌单列表能正常滚动，撑满剩余空间 */
+.sm-panel-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* iOS 上滑动更丝滑 */
+}
 </style>
 </head>
 <body>
