@@ -3696,13 +3696,19 @@ window.speakText = function(text) {
             const gl = testCanvas.getContext('webgl2');
             
             if (gl) {
-                console.log('[Boot] WebGL2 supported. Launching MoltenMetal opening.');
-                if (root) {
-                    root.classList.add('active');
-                    const loading = document.getElementById('loading-screen');
-                    if (loading) loading.style.display = 'none';
-                    initMoltenMetalOpening(root);
-                }
+                           // 🚨 清场：阻止旧脚本并干掉锦鲤和地图
+            document.documentElement.classList.add('no-old-opening');
+            
+            const loading = document.getElementById('loading-screen');
+            if (loading) loading.remove();
+            
+            const map = document.getElementById('marauder-map');
+            if (map) map.remove();
+
+            if (root) {
+                root.classList.add('active');
+                initMoltenMetalOpening(root);
+            }
             } else {
                 console.warn('[Boot] No WebGL2. Bypassing opening entirely.');
                 triggerFallback();
