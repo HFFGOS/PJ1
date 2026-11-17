@@ -1818,10 +1818,15 @@ const StellariumMap = {
                 const zhName = this.ZH_NAMES[rawName] || '';
                 return { enName: rawName, zhName: zhName, id: f.id || rawName, lines, segments, totalLength, cx: cx/count, cy: cy/count, type: 'constellation', progress: this.showConstellationLines ? 1 : 0, targetProgress: this.showConstellationLines ? 1 : 0 };
             });
-            this.searchData = [
-                ...this.constellations.map(c => ({ name: c.enName, zh: c.zhName, id: c.id, type: 'Constellation', target: c })),
-                ...this.stars.filter(s => s.enName).map(s => ({ name: s.enName, zh: s.zhName, type: 'Star', target: s }))
-            ].filter((v, i, a) => a.findIndex(t => t.name === v.name && t.type === v.type) === i);
+        this.searchData = [
+            ...this.constellations.map(c => ({ name: c.enName, zh: c.zhName, id: c.id, type: 'Constellation', target: c })),
+            ...this.stars.filter(s => s.enName).map(s => ({ 
+                name: s.enName, 
+                zh: s.zhName, 
+                type: s.type === 'star' ? 'Star' : 'Deep Sky', 
+                target: s 
+            }))
+        ].filter((v, i, a) => a.findIndex(t => t.name === v.name && t.type === v.type) === i);
         } catch (e) { console.error('Failed to load celestial data.', e); }
         this.bindEvents(); this.setupSearch(); this.bindUiButtons();
         const orion = this.constellations.find(c => c.enName === 'Orion');
@@ -3606,7 +3611,7 @@ window.speakText = function(text) {
     if (!window.matchMedia('(pointer: coarse)').matches) {
         const cursor = document.createElement('div'); cursor.id = 'custom-cursor'; document.body.appendChild(cursor);
         const trails = [];
-        for (let i = 0; i < 7; i++) { const t = document.createElement('div'); t.id = 'custom-cursor-trail'; t.style.opacity = ((1 - i / 7) * 0.55).toFixed(2); document.body.appendChild(t); trails.push({ el: t, x: window.innerWidth / 2, y: window.innerHeight / 2 }); }
+        for (let i = 0; i < 7; i++) { const t = document.createElement('div'); t.style.opacity = ((1 - i / 7) * 0.55).toFixed(2); document.body.appendChild(t); trails.push({ el: t, x: window.innerWidth / 2, y: window.innerHeight / 2 }); }
         let mx = window.innerWidth / 2, my = window.innerHeight / 2, cx = mx, cy = my;
         document.addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
         document.addEventListener('pointerdown', () => cursor.classList.add('clicking'));
@@ -4139,9 +4144,7 @@ let unlockedSecrets = JSON.parse(localStorage.getItem('unlocked_secrets') || '[]
 
         if (fromSecret) {
             // 👈 核心修复：强制唤醒音频引擎
-            if (window.localAudioCtx && window.localAudioCtx.state === 'suspended') {
-                window.localAudioCtx.resume();
-            }
+if (window.initAudioContext) window.initAudioContext();
             
             audio.pause();
             audio.volume = 0;
@@ -4157,7 +4160,7 @@ let unlockedSecrets = JSON.parse(localStorage.getItem('unlocked_secrets') || '[]
             showNowPlaying(TRACKS[index].name, true);
             document.getElementById('chill-song-name').textContent = TRACKS[index].name;
         } else {
-                        if (window.localAudioCtx && window.localAudioCtx.state === 'suspended') window.localAudioCtx.resume();
+                        if (window.initAudioContext) window.initAudioContext();
             audio.play().catch(e => console.log("切歌被浏览器拦截", e));
             showNowPlaying(TRACKS[index].name, false);
         }
@@ -4170,7 +4173,7 @@ let unlockedSecrets = JSON.parse(localStorage.getItem('unlocked_secrets') || '[]
     audio.addEventListener('ended', () => {
         let next = currentTrackIndex + 1;
         if (next >= TRACKS.length) next = 0;
-        if (TRACKS[next].secret && !isUnlocked) next = 0;
+        if (TRACKS[next].secret && !unlockedSecrets.includes(TRACKS[next].secret)) next = 0;
         changeTrack(next);
     });
 
@@ -4182,9 +4185,7 @@ let unlockedSecrets = JSON.parse(localStorage.getItem('unlocked_secrets') || '[]
 
     function togglePlay() {
         // 核心修复：每次点击播放时，强行唤醒 AudioContext
-        if (window.localAudioCtx && window.localAudioCtx.state === 'suspended') {
-            window.localAudioCtx.resume();
-        }
+if (window.initAudioContext) window.initAudioContext();
         
         if (audio.paused) { 
             audio.play().then(() => {
@@ -4204,14 +4205,14 @@ let unlockedSecrets = JSON.parse(localStorage.getItem('unlocked_secrets') || '[]
     function playPrev() {
         let prev = currentTrackIndex - 1;
         if (prev < 0) prev = TRACKS.length - 1;
-        if (TRACKS[prev].secret && !isUnlocked) prev = 0;
+        if (TRACKS[prev].secret && !unlockedSecrets.includes(TRACKS[prev].secret)) prev = 0;
         changeTrack(prev);
     }
 
     function playNext() {
         let next = currentTrackIndex + 1;
         if (next >= TRACKS.length) next = 0;
-        if (TRACKS[next].secret && !isUnlocked) next = 0;
+        if (TRACKS[next].secret && !unlockedSecrets.includes(TRACKS[next].secret)) next = 0;
         changeTrack(next);
     }
 
