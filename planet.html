@@ -783,7 +783,7 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 import createGlobe from 'https://esm.sh/cobe';
 
 // ==========================================
-// 1. 数据与状态 (Ultra 满血版)
+// 1. 基础状态与配置
 // ==========================================
 const state = {
   temperature: 15, atmosphere: 1.0, gravity: 1.0, radiation: 12, spinSpeed: 1.0,
@@ -801,24 +801,22 @@ let theta = 0.3;
 let isDragging = false, lastX = 0, lastY = 0;
 let autoRotate = true;
 
-// 初始化引擎
 const globe = createGlobe(canvas, {
-  devicePixelRatio: 2,        // 强制 2x 高清
+  devicePixelRatio: 2,
   width: canvas.clientWidth * 2 || 1000,
   height: canvas.clientHeight * 2 || 1000,
   phi: 0,
   theta: 0.3,
-  dark: 1,                    // 1 为暗黑背景
-  diffuse: 1.2,               // 光照效果
-  mapSamples: 40000,          // 40000个点阵，极致精细，完美勾勒真实大陆
-  mapBrightness: 6,           // 亮度
-  baseColor: [1, 1, 1],       // 纯白点阵（图1的质感）
-  markerColor: [0.2, 0.8, 1], // 标记点发光色（青蓝）
-  glowColor: [0.8, 0.8, 1],   // 地球边缘的光晕（白蓝）
-  markers: []                 // 不需要额外标记
+  dark: 1,
+  diffuse: 1.2,
+  mapSamples: 40000,
+  mapBrightness: 6,
+  baseColor: [1, 1, 1],
+  markerColor: [0.2, 0.8, 1],
+  glowColor: [0.8, 0.8, 1],
+  markers: []
 });
 
-// 鼠标拖拽
 canvas.addEventListener('pointerdown', (e) => {
   isDragging = true; lastX = e.clientX; lastY = e.clientY; autoRotate = false;
 });
@@ -829,29 +827,22 @@ canvas.addEventListener('pointermove', (e) => {
   theta = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, theta));
   lastX = e.clientX; lastY = e.clientY;
 });
-window.addEventListener('pointerup', () => {
-  isDragging = false; autoRotate = true;
-});
+window.addEventListener('pointerup', () => { isDragging = false; autoRotate = true; });
 
-// 渲染循环
 let lastTime = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
   const dt = Math.min((now - lastTime) / 1000, 0.05);
   lastTime = now;
-  if (autoRotate && !isDragging) {
-    phi += dt * 0.1 * state.spinSpeed; // 自转速度跟随滑杆
-  }
+  if (autoRotate && !isDragging) phi += dt * 0.1 * state.spinSpeed;
   globe.update({ phi: phi, theta: theta });
 }
 requestAnimationFrame(loop);
 
-window.addEventListener('resize', () => {
-  globe.resize(canvas.clientWidth, canvas.clientHeight);
-});
+// 注意：这里删掉了报错的 globe.resize，cobe 会自动适应 canvas 的 CSS 尺寸
 
 // ==========================================
-// 3. 面板逻辑与联动计算
+// 3. 数据计算逻辑 (恢复左下角面板)
 // ==========================================
 function oxygenScore(o2) {
   if (o2 < 12) return (o2 / 12) * 0.35;
@@ -993,6 +984,49 @@ function updateGasUI() {
 ['O2','N2','CO2','Ar'].forEach(bindGas);
 updateGasUI();
 updateHabitability();
+
+// ==========================================
+// 5. 复活下方极简粒子柱状图
+// ==========================================
+const chartCanvas = document.getElementById('chart-canvas');
+if (chartCanvas) {
+  const ctx = chartCanvas.getContext('2d');
+  function drawChart() {
+    requestAnimationFrame(drawChart);
+    const w = chartCanvas.clientWidth, h = chartCanvas.clientHeight;
+    if (!w || !h) return;
+    chartCanvas.width = w * 2; chartCanvas.height = h * 2;
+    ctx.scale(2, 2);
+    ctx.clearRect(0, 0, w, h);
+
+    const dims = computeDimensions();
+    const values = DIM_ORDER.map(k => dims[k]);
+    const barW = w / 10;
+
+    values.forEach((val, i) => {
+      const x = i * barW + barW / 2;
+      const barH = val * (h - 40);
+      const baseY = h - 20;
+      
+      // 发光底座
+      const grad = ctx.createLinearGradient(0, baseY, 0, baseY - barH);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x - barW*0.3, baseY - barH, barW*0.6, barH);
+
+      // 顶部光点
+      ctx.fillStyle = '#fff';
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#fff';
+      ctx.beginPath();
+      ctx.arc(x, baseY - barH, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+  }
+  drawChart();
+}
 
 // 返回主页按钮
 const btnBack = document.getElementById('btn-back');
