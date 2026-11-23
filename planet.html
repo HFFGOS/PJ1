@@ -442,6 +442,103 @@ main.lab {
 .back-link {
     cursor: pointer; background: none; border: none; font-family: inherit;
 }
+  /* =========================================================
+   Ultra 极客风黑金主题与全新滑杆
+   ========================================================= */
+:root {
+  --bg: #000000 !important; /* 强制纯黑背景 */
+  --glass: rgba(10, 10, 10, 0.85);
+  --line: rgba(255, 255, 255, 0.1);
+  --ink-2: rgba(255, 255, 255, 0.8);
+  --ink-3: rgba(255, 255, 255, 0.5);
+  --bronze: #d4af37; /* 香槟金 */
+}
+
+body {
+  background: #000000 !important;
+}
+
+/* 锁定按钮样式 */
+.lock-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 8px;
+  opacity: 0.5;
+  transition: all 0.2s;
+  filter: grayscale(1);
+}
+.lock-btn:hover {
+  opacity: 0.9;
+  filter: grayscale(0);
+}
+/* 锁定时的发光效果 */
+.lock-btn.locked {
+  opacity: 1;
+  filter: grayscale(0) drop-shadow(0 0 6px rgba(255, 215, 0, 0.8));
+}
+
+/* 气体行布局微调 */
+.gas-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.gas-row input[type="range"] {
+  flex: 1;
+  margin: 0 10px;
+}
+.gas-value {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  color: #fff;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* 完美的白轨+高亮滑块样式 */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+  height: 20px;
+}
+input[type="range"]:focus {
+  outline: none;
+}
+/* 轨道 (纯白) */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: #ffffff;
+  border-radius: 2px;
+}
+/* 滑块 (亮蓝色) */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+  cursor: pointer;
+  margin-top: -5px;
+  transition: transform 0.1s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+/* 滑杆禁用状态（锁定后） */
+input[type="range"]:disabled::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.2);
+}
+input[type="range"]:disabled::-webkit-slider-thumb {
+  background: #666;
+  box-shadow: none;
+}
 </style>
 </head>
 <body>
