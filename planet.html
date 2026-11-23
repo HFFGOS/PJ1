@@ -3,49 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Planet Lab · Ultra</title>
+<title>Planet Lab — Ultra</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500&family=Fira+Code&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #000000; --panel-bg: rgba(20, 20, 25, 0.6); --border: rgba(255, 255, 255, 0.1);
-    --text-main: #ffffff; --text-muted: #888; --accent: #3b82f6;
+    --bg: #000000; --ink: #f4f2ff; --ink-2: rgba(236,232,255,.72); --ink-3: rgba(220,214,255,.5);
+    --bronze: #cda87d; --accent: #3b82f6; --line: rgba(255, 255, 255, 0.1);
+    --glass: rgba(20, 13, 56, 0.4);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background: var(--bg); color: var(--text-main); font-family: 'Inter Tight', sans-serif;
-    display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden;
+    background: var(--bg); color: var(--ink); font-family: 'Inter Tight', system-ui, sans-serif;
+    display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden;
   }
   .layout { display: flex; gap: 24px; width: 100%; max-width: 1500px; padding: 30px; height: 100vh; }
-  .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; backdrop-filter: blur(20px); }
+  .panel {
+    background: var(--glass); border: 1px solid var(--line); border-radius: 16px;
+    backdrop-filter: blur(20px); padding: 24px; display: flex; flex-direction: column;
+  }
   
-  .left-panel { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
-  #planet-canvas { width: 100%; height: 100%; max-width: 800px; max-height: 800px; cursor: grab; touch-action: none; }
+  /* 左侧星球 */
+  .left-panel { flex: 1; position: relative; overflow: hidden; align-items: center; justify-content: center; }
+  #planet-canvas { width: 100%; height: 100%; cursor: grab; touch-action: none; }
   #planet-canvas:active { cursor: grabbing; }
   
-  .right-panel { width: 400px; display: flex; flex-direction: column; gap: 24px; max-height: 100%; overflow-y: auto; }
+  /* 右侧面板 */
+  .right-panel { width: 400px; max-height: 100%; overflow-y: auto; }
   .right-panel::-webkit-scrollbar { width: 4px; }
   .right-panel::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
-  .control-group { margin-bottom: 12px; }
-  .group-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; border-bottom: 1px dashed var(--border); padding-bottom: 8px; }
-  .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 13px; }
-  .row span { width: 50px; }
-  .row output { width: 70px; text-align: right; font-family: 'Fira Code', monospace; }
+  .group-title {
+    font-family: 'Fira Code', monospace; font-size: 11px; letter-spacing: 1px;
+    color: var(--ink-3); margin-bottom: 16px; border-bottom: 1px dashed var(--line); padding-bottom: 8px;
+  }
+  .row { display: flex; align-items: center; margin-bottom: 12px; font-size: 13px; }
+  .row span:first-child { width: 50px; color: var(--ink-2); }
+  .row output { width: 70px; text-align: right; font-family: 'Fira Code', monospace; color: #fff; }
   
+  /* 滑杆 */
   input[type="range"] { -webkit-appearance: none; flex: 1; background: transparent; margin: 0 10px; height: 20px; }
   input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #ffffff; border-radius: 2px; }
-  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -5px; box-shadow: 0 0 10px var(--accent); transition: transform 0.1s; }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; margin-top: -5px;
+    box-shadow: 0 0 10px var(--accent); transition: transform 0.1s;
+  }
   input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   input[type="range"]:disabled::-webkit-slider-runnable-track { background: #333; }
   input[type="range"]:disabled::-webkit-slider-thumb { background: #555; box-shadow: none; cursor: not-allowed; }
-  
-  .lock-btn { background: none; border: none; font-size: 14px; cursor: pointer; opacity: 0.3; transition: all 0.2s; padding: 0 5px; }
-  .lock-btn:hover { opacity: 0.8; }
-  .lock-btn.locked { opacity: 1; filter: drop-shadow(0 0 5px #fbbf24); }
 
-  .chart-container { width: 100%; height: 100px; margin-top: 10px; }
+  /* 锁 */
+  .lock-btn { background: none; border: none; font-size: 14px; cursor: pointer; opacity: 0.4; transition: 0.2s; padding: 0 8px; }
+  .lock-btn:hover { opacity: 0.8; }
+  .lock-btn.locked { opacity: 1; filter: drop-shadow(0 0 6px #fbbf24); }
+  
+  .derived-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+  .derived-item { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  .derived-label { font-size: 11px; color: var(--ink-3); margin-bottom: 4px; }
+  .dv-num { font-size: 18px; color: var(--bronze); font-family: 'Fira Code', monospace; }
+  
+  .chart-container { width: 100%; height: 120px; margin-top: 20px; }
   #chart-canvas { width: 100%; height: 100%; }
-  .back-btn { display: inline-block; padding: 8px 16px; color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+  .back-btn { color: var(--ink-3); text-decoration: none; font-size: 13px; margin-bottom: 20px; display: inline-block; }
   .back-btn:hover { color: #fff; }
 </style>
 </head>
@@ -54,15 +73,13 @@
 <div class="layout">
   <div class="panel left-panel">
     <canvas id="planet-canvas"></canvas>
-    <!-- 备用提示：如果CDN挂了，会显示这个 -->
-    <div id="globe-error" style="position:absolute; color:#666; font-family:'Fira Code'; display:none;">地球引擎加载被网络拦截，刷新重试。</div>
   </div>
 
   <div class="panel right-panel">
-    <div><a href="index.html" class="back-btn">← Back to Home</a></div>
+    <a href="index.html" class="back-btn">← Back to Home</a>
     
     <div class="control-group">
-      <div class="group-title">直接控制 · Direct</div>
+      <div class="group-title">直接控制 · DIRECT</div>
       <div class="row"><span>温度</span><input type="range" id="ctrl-temperature" min="-80" max="200" value="15"><output data-value="temperature">15°C</output></div>
       <div class="row"><span>气压</span><input type="range" id="ctrl-atmosphere" min="0" max="5" step="0.05" value="1"><output data-value="atmosphere">1.00 atm</output></div>
       <div class="row"><span>重力</span><input type="range" id="ctrl-gravity" min="0.1" max="3" step="0.05" value="1"><output data-value="gravity">1.00 g</output></div>
@@ -70,186 +87,324 @@
       <div class="row"><span>自转</span><input type="range" id="ctrl-spin" min="0" max="3" step="0.05" value="1"><output data-value="spinSpeed">1.00×</output></div>
     </div>
 
-    <div class="control-group">
-      <div class="group-title">大气成分 · Atmosphere</div>
+    <div class="control-group" style="margin-top: 24px;">
+      <div class="group-title">大气成分 · ATMOSPHERE</div>
       <div class="row"><span>O₂</span><button class="lock-btn" data-lock="O2">🔓</button><input type="range" id="gas-O2" min="0" max="99" step="0.1" value="21"><output data-gas="O2">21.0%</output></div>
       <div class="row"><span>N₂</span><button class="lock-btn" data-lock="N2">🔓</button><input type="range" id="gas-N2" min="0" max="99" step="0.1" value="78"><output data-gas="N2">78.0%</output></div>
       <div class="row"><span>CO₂</span><button class="lock-btn" data-lock="CO2">🔓</button><input type="range" id="gas-CO2" min="0" max="99" step="0.1" value="0.04"><output data-gas="CO2">0.0%</output></div>
       <div class="row"><span>Ar</span><button class="lock-btn" data-lock="Ar">🔓</button><input type="range" id="gas-Ar" min="0" max="99" step="0.1" value="0.92"><output data-gas="Ar">0.9%</output></div>
-      <div class="row" style="margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px;"><span>总和</span><output id="gas-sum-val">100.0%</output></div>
+      <div class="row" style="margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 10px;"><span>总和</span><output id="gas-sum-val">100.0%</output></div>
+    </div>
+
+    <div class="control-group" style="margin-top: 24px;">
+      <div class="group-title">联动推导 · DERIVED</div>
+      <div class="derived-grid">
+        <div class="derived-item" data-derived="magnetic"><div class="derived-label">磁场保护</div><div class="dv-num">0.00</div></div>
+        <div class="derived-item" data-derived="tempVariation"><div class="derived-label">昼夜温差</div><div class="dv-num">0.00</div></div>
+        <div class="derived-item" data-derived="light"><div class="derived-label">光照强度</div><div class="dv-num">0.00</div></div>
+        <div class="derived-item" data-derived="geological"><div class="derived-label">地质稳定</div><div class="dv-num">0.00</div></div>
+      </div>
     </div>
 
     <div class="chart-container"><canvas id="chart-canvas"></canvas></div>
   </div>
 </div>
 
-<!-- ========================================== -->
-<!-- 第一部分：纯逻辑代码（无需网络，100%可用） -->
-<!-- ========================================== -->
 <script>
-  const state = {
-    temperature: 15, atmosphere: 1.0, gravity: 1.0, radiation: 12, spinSpeed: 1.0,
-    gases: { O2: 21, N2: 78, CO2: 0.04, Ar: 0.92 }
-  };
-  const GAS_MIN = { O2: 0.01, N2: 0.01, CO2: 0.01, Ar: 0.01 };
-  const gasLocks = { O2: false, N2: false, CO2: false, Ar: false };
+// ==========================================
+// 1. 原始数据与状态
+// ==========================================
+const state = {
+  temperature: 15, atmosphere: 1.0, gravity: 1.0, radiation: 12, spinSpeed: 1.0,
+  gases: { O2: 21, N2: 78, CO2: 0.04, Ar: 0.92 }
+};
+const GAS_MIN = { O2: 0.01, N2: 0.01, CO2: 0.01, Ar: 0.01 };
+const gasLocks = { O2: false, N2: false, CO2: false, Ar: false };
 
-  function bindSlider(id, key, formatter) {
-    const el = document.getElementById(id);
-    const valEl = document.querySelector(`[data-value="${key}"]`);
-    if (!el) return;
-    el.addEventListener('input', (e) => {
-      state[key] = parseFloat(e.target.value);
-      if (valEl) valEl.textContent = formatter(state[key]);
-      drawChart();
-    });
-    state[key] = parseFloat(el.value);
-    if (valEl) valEl.textContent = formatter(state[key]);
+// ==========================================
+// 2. 纯原生 WebGL2 点阵星球引擎
+// ==========================================
+const TERRAIN_W = 512; const TERRAIN_H = 256;
+const terrainData = new Uint8Array(TERRAIN_W * TERRAIN_H);
+for (let y = 0; y < TERRAIN_H; y++) {
+  const lat = (y / TERRAIN_H) * Math.PI - Math.PI / 2;
+  const cosLat = Math.cos(lat);
+  for (let x = 0; x < TERRAIN_W; x++) {
+    const lon = (x / TERRAIN_W) * Math.PI * 2;
+    const n1 = Math.sin(lon * 3 + 1.2) * Math.cos(lat * 4 + 0.5);
+    const n2 = Math.sin(lon * 5 - 2.1) * Math.cos(lat * 3 + 1.8);
+    const n3 = Math.sin(lon * 2 + 0.7) * Math.cos(lat * 6);
+    const noise = (n1 + n2 * 0.6 + n3 * 0.4) / 2.0;
+    terrainData[y * TERRAIN_W + x] = (noise > 0.08 && Math.abs(cosLat) > 0.12) ? 255 : 0;
   }
-  bindSlider('ctrl-temperature', 'temperature', v => `${v.toFixed(0)}°C`);
-  bindSlider('ctrl-atmosphere', 'atmosphere', v => `${v.toFixed(2)} atm`);
-  bindSlider('ctrl-gravity', 'gravity', v => `${v.toFixed(2)} g`);
-  bindSlider('ctrl-radiation', 'radiation', v => `${v.toFixed(0)}%`);
-  bindSlider('ctrl-spin', 'spinSpeed', v => `${v.toFixed(2)}×`);
+}
 
-  document.querySelectorAll('.lock-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const key = e.target.dataset.lock;
-      gasLocks[key] = !gasLocks[key];
-      e.target.textContent = gasLocks[key] ? '🔒' : '🔓';
-      e.target.classList.toggle('locked', gasLocks[key]);
-      const slider = document.getElementById(`gas-${key}`);
-      if (slider) slider.disabled = gasLocks[key];
-    });
-  });
+const canvas = document.getElementById('planet-canvas');
+const gl = canvas.getContext('webgl2', { alpha: true, antialias: true });
+if (!gl) { alert('你的浏览器不支持 WebGL2'); }
 
-  function bindGas(key) {
-    const el = document.getElementById(`gas-${key}`);
-    if (!el) return;
-    el.addEventListener('input', (e) => {
-      setGas(key, parseFloat(e.target.value), el);
-      updateGasUI();
-      drawChart();
-    });
+const VS_SRC = `#version 300 es
+in vec2 aPos; void main() { gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+const FS_SRC = `#version 300 es
+precision highp float;
+uniform vec2 uRes; uniform float uTime; uniform sampler2D uTerrain; uniform vec2 uRot;
+out vec4 outColor;
+const float PI = 3.14159265; const float TAU = 6.28318530;
+
+mat2 rot2(float a) { float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
+
+// 光环相交检测
+float ringIntersection(vec3 ro, vec3 rd, vec3 normal, float radius, float thickness) {
+    float denom = dot(rd, normal);
+    if (abs(denom) < 1e-5) return 0.0;
+    float t = -dot(ro, normal) / denom;
+    if (t < 0.0) return 0.0;
+    vec3 p = ro + rd * t;
+    return smoothstep(thickness, 0.0, abs(length(p) - radius));
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec2 p = (uv - 0.5) * 2.0;
+  p.x *= uRes.x / uRes.y;
+
+  float R = 0.82; float d2 = dot(p, p);
+  vec3 color = vec3(0.0);
+
+  // 纯黑背景 + 射线
+  vec3 ro = vec3(0.0, 0.0, 3.0); 
+  vec3 rd = normalize(vec3(p.x * 0.4, p.y * 0.4, -1.0));
+
+  // 绘制两层倾斜光环
+  vec3 ringNormal1 = normalize(vec3(0.4, 0.6, 0.2));
+  color += vec3(0.8, 0.1, 0.5) * ringIntersection(ro, rd, ringNormal1, 1.3, 0.015) * 1.5;
+  vec3 ringNormal2 = normalize(vec3(-0.3, 0.5, 0.6));
+  color += vec3(0.3, 0.5, 0.8) * ringIntersection(ro, rd, ringNormal2, 1.45, 0.01) * 0.8;
+
+  // 绘制地球
+  if (d2 > R * R) {
+    color += vec3(0.5, 0.2, 0.8) * exp(-(sqrt(d2) - R) * 15.0) * 0.4;
+    outColor = vec4(color, 1.0);
+    return;
   }
 
-  function setGas(key, value, el) {
-    value = Math.max(GAS_MIN[key], Math.min(99, value));
-    const others = Object.keys(state.gases).filter(k => k !== key);
-    let lockedSum = 0; others.forEach(k => { if (gasLocks[k]) lockedSum += state.gases[k]; });
-    let remaining = 100 - value - lockedSum;
-    if (remaining < 0) { value = 100 - lockedSum; remaining = 0; if (el) el.value = value; }
-    
-    const unlockedOthers = others.filter(k => !gasLocks[k]);
-    if (unlockedOthers.length > 0) {
-      const unlockedSum = unlockedOthers.reduce((sum, k) => sum + state.gases[k], 0);
-      if (unlockedSum > 0.001) {
-        const scale = remaining / unlockedSum;
-        for (const k of unlockedOthers) state.gases[k] = Math.max(GAS_MIN[k], state.gases[k] * scale);
-      } else {
-        const share = remaining / unlockedOthers.length;
-        for (const k of unlockedOthers) state.gases[k] = Math.max(GAS_MIN[k], share);
-      }
-    }
-    state.gases[key] = value;
-    const sum = Object.values(state.gases).reduce((a, b) => a + b, 0);
-    const diff = 100 - sum;
-    if (Math.abs(diff) > 0.001) {
-      const absorber = unlockedOthers.length > 0 ? unlockedOthers[0] : key;
-      state.gases[absorber] = Math.max(GAS_MIN[absorber], state.gases[absorber] + diff);
-    }
+  // 球体映射
+  float z = sqrt(R * R - d2);
+  vec3 normal = normalize(vec3(p, z));
+  normal.xz = rot2(uRot.x) * normal.xz;
+  normal.yz = rot2(uRot.y) * normal.yz;
+
+  vec2 sphereUV = vec2(atan(normal.z, normal.x) / TAU + 0.5, asin(clamp(normal.y, -1.0, 1.0)) / PI + 0.5);
+  float land = texture(uTerrain, sphereUV).r;
+
+  // 边缘光
+  color += vec3(0.6, 0.4, 1.0) * pow(1.0 - z / R, 3.0) * 0.3; 
+
+  // 终极点阵：将陆地切割成纯白格子点
+  if (land > 0.5) {
+    vec2 grid = sphereUV * vec2(350.0, 175.0); 
+    vec2 f = fract(grid);
+    float dotMask = smoothstep(0.2, 0.1, distance(f, vec2(0.5))); 
+    float edgeFade = smoothstep(0.0, 0.3, z / R); 
+    color += vec3(1.0) * dotMask * edgeFade * 0.8; 
   }
 
-  function updateGasUI() {
-    for (const k of Object.keys(state.gases)) {
-      const el = document.getElementById(`gas-${k}`); const valEl = document.querySelector(`[data-gas="${k}"]`);
-      if (el && !gasLocks[k]) el.value = state.gases[k];
-      if (valEl) valEl.textContent = `${state.gases[k].toFixed(1)}%`;
-    }
-    const sumEl = document.getElementById('gas-sum-val');
-    if (sumEl) sumEl.textContent = `${Object.values(state.gases).reduce((a, b) => a + b, 0).toFixed(1)}%`;
-  }
-  ['O2','N2','CO2','Ar'].forEach(bindGas);
-  updateGasUI();
+  outColor = vec4(color, 1.0);
+}`;
 
-  // 图表绘制
-  const chartCanvas = document.getElementById('chart-canvas');
-  const ctx = chartCanvas.getContext('2d');
-  window.drawChart = function() {
-    const w = chartCanvas.clientWidth, h = chartCanvas.clientHeight;
-    if (!w || !h) return;
-    chartCanvas.width = w * 2; chartCanvas.height = h * 2;
-    ctx.scale(2, 2); ctx.clearRect(0, 0, w, h);
-    const vals = [ state.temperature / 100, state.gases.O2 / 100, state.atmosphere / 5, state.gravity / 3, 1 - state.radiation / 100, state.spinSpeed / 3, 0.8, 0.5, 0.9, 0.6 ];
-    const barW = w / 10;
-    vals.forEach((val, i) => {
-      const x = i * barW + barW / 2;
-      const barH = Math.max(5, Math.min(1, val) * (h - 20));
-      const baseY = h - 10;
-      const grad = ctx.createLinearGradient(0, baseY, 0, baseY - barH);
-      grad.addColorStop(0, 'rgba(255, 255, 255, 0.05)'); grad.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
-      ctx.fillStyle = grad; ctx.fillRect(x - barW*0.3, baseY - barH, barW*0.6, barH);
-      ctx.fillStyle = '#fff'; ctx.shadowBlur = 8; ctx.shadowColor = '#fff';
-      ctx.beginPath(); ctx.arc(x, baseY - barH, 2, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-    });
-  }
-  setTimeout(window.drawChart, 100);
-  window.addEventListener('resize', window.drawChart);
-</script>
+function compile(type, src) {
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS_SRC));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS_SRC));
+gl.linkProgram(prog); gl.useProgram(prog);
 
-<!-- ========================================== -->
-<!-- 第二部分：地球渲染（独立加载，就算CDN挂了也不影响滑杆） -->
-<!-- ========================================== -->
-<script type="module">
-  // 使用 jsdelivr 的官方 ESM 代理，相比 esm.sh 更稳
-  import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe@0.6.3/+esm';
+const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+const vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+const aPos = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+const U = {};
+['uRes','uTime','uTerrain','uRot'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+const terrainTex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, terrainTex);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, TERRAIN_W, TERRAIN_H, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, terrainData);
+
+// 拖拽逻辑
+let camera = { yaw: 0, pitch: 0.15 };
+let isDragging = false, lastX = 0, lastY = 0;
+let autoRotate = true;
+
+canvas.addEventListener('pointerdown', (e) => {
+  isDragging = true; autoRotate = false;
+  lastX = e.clientX; lastY = e.clientY;
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!isDragging) return;
+  camera.yaw += (e.clientX - lastX) * 0.008;
+  camera.pitch = Math.max(-1.2, Math.min(1.2, camera.pitch + (e.clientY - lastY) * 0.008));
+  lastX = e.clientX; lastY = e.clientY;
+});
+window.addEventListener('pointerup', () => {
+  isDragging = false; autoRotate = true;
+});
+
+let lastTime = performance.now(), timeAccum = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min((now - lastTime) / 1000, 0.05); lastTime = now;
+  timeAccum += dt;
+  if (autoRotate && !isDragging) {
+    camera.yaw += 0.12 * state.spinSpeed * dt;
+  }
   
-  const canvas = document.getElementById('planet-canvas');
-  let phi = 0, theta = 0.3;
-  let targetPhi = 0, targetTheta = 0.3;
-  let isDragging = false, lastX = 0, lastY = 0;
-  let autoRotate = true;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round(rect.width * dpr)), h = Math.max(1, Math.round(rect.height * dpr));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
+  
+  gl.useProgram(prog); gl.bindVertexArray(vao);
+  gl.uniform2f(U.uRes, canvas.width, canvas.height);
+  gl.uniform1f(U.uTime, timeAccum);
+  gl.uniform2f(U.uRot, camera.yaw, camera.pitch);
+  gl.uniform1i(U.uTerrain, 0); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, terrainTex);
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+requestAnimationFrame(loop);
 
-  const globe = createGlobe(canvas, {
-    devicePixelRatio: 2,
-    width: 800, height: 800, // 给个固定基准，防止容器还没渲染完报错
-    phi: 0, theta: 0.3,
-    dark: 1, diffuse: 1.2,
-    mapSamples: 40000,
-    mapBrightness: 6,
-    baseColor: [1, 1, 1],
-    markerColor: [0.2, 0.8, 1],
-    glowColor: [0.8, 0.8, 1]
+// ==========================================
+// 3. 滑杆、锁、图表（满血版逻辑）
+// ==========================================
+function bindSlider(id, key, formatter) {
+  const el = document.getElementById(id); const valEl = document.querySelector(`[data-value="${key}"]`);
+  if (!el) return;
+  el.addEventListener('input', (e) => {
+    state[key] = parseFloat(e.target.value); 
+    if (valEl) valEl.textContent = formatter(state[key]); 
+    updateData();
   });
+  state[key] = parseFloat(el.value); if (valEl) valEl.textContent = formatter(state[key]);
+}
+bindSlider('ctrl-temperature', 'temperature', v => `${v.toFixed(0)}°C`);
+bindSlider('ctrl-atmosphere', 'atmosphere', v => `${v.toFixed(2)} atm`);
+bindSlider('ctrl-gravity', 'gravity', v => `${v.toFixed(2)} g`);
+bindSlider('ctrl-radiation', 'radiation', v => `${v.toFixed(0)}%`);
+bindSlider('ctrl-spin', 'spinSpeed', v => `${v.toFixed(2)}×`);
 
-  function animate() {
-    // 如果全局的 state 存在（拿到了滑杆数据），就联动自转速度
-    if (window.state && autoRotate && !isDragging) targetPhi += 0.003 * window.state.spinSpeed;
-    else if (autoRotate && !isDragging) targetPhi += 0.003;
-    
-    phi += (targetPhi - phi) * 0.1;
-    theta += (targetTheta - theta) * 0.1;
-    globe.update({ phi, theta });
-    requestAnimationFrame(animate);
+document.querySelectorAll('.lock-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const key = e.target.dataset.lock;
+    gasLocks[key] = !gasLocks[key];
+    e.target.textContent = gasLocks[key] ? '🔒' : '🔓';
+    e.target.classList.toggle('locked', gasLocks[key]);
+    document.getElementById(`gas-${key}`).disabled = gasLocks[key];
+  });
+});
+
+function bindGas(key) {
+  const el = document.getElementById(`gas-${key}`);
+  if (!el) return;
+  el.addEventListener('input', (e) => {
+    setGas(key, parseFloat(e.target.value), el);
+    updateGasUI(); updateData();
+  });
+}
+
+function setGas(key, value, el) {
+  value = Math.max(GAS_MIN[key], Math.min(99, value));
+  const others = Object.keys(state.gases).filter(k => k !== key);
+  let lockedSum = 0; others.forEach(k => { if (gasLocks[k]) lockedSum += state.gases[k]; });
+  let remaining = 100 - value - lockedSum;
+  if (remaining < 0) { value = 100 - lockedSum; remaining = 0; if (el) el.value = value; }
+  
+  const unlockedOthers = others.filter(k => !gasLocks[k]);
+  if (unlockedOthers.length > 0) {
+    const unlockedSum = unlockedOthers.reduce((sum, k) => sum + state.gases[k], 0);
+    if (unlockedSum > 0.001) {
+      const scale = remaining / unlockedSum;
+      for (const k of unlockedOthers) state.gases[k] = Math.max(GAS_MIN[k], state.gases[k] * scale);
+    } else {
+      const share = remaining / unlockedOthers.length;
+      for (const k of unlockedOthers) state.gases[k] = Math.max(GAS_MIN[k], share);
+    }
   }
-  requestAnimationFrame(animate);
+  state.gases[key] = value;
+  const sum = Object.values(state.gases).reduce((a, b) => a + b, 0);
+  const diff = 100 - sum;
+  if (Math.abs(diff) > 0.001) {
+    const absorber = unlockedOthers.length > 0 ? unlockedOthers[0] : key;
+    state.gases[absorber] = Math.max(GAS_MIN[absorber], state.gases[absorber] + diff);
+  }
+}
 
-  canvas.addEventListener('pointerdown', (e) => {
-    isDragging = true; autoRotate = false;
-    lastX = e.clientX; lastY = e.clientY;
-    canvas.setPointerCapture(e.pointerId);
+function updateGasUI() {
+  for (const k of Object.keys(state.gases)) {
+    const el = document.getElementById(`gas-${k}`); const valEl = document.querySelector(`[data-gas="${k}"]`);
+    if (el && !gasLocks[k]) el.value = state.gases[k];
+    if (valEl) valEl.textContent = `${state.gases[k].toFixed(1)}%`;
+  }
+  const sumEl = document.getElementById('gas-sum-val');
+  if (sumEl) sumEl.textContent = `${Object.values(state.gases).reduce((a, b) => a + b, 0).toFixed(1)}%`;
+}
+['O2','N2','CO2','Ar'].forEach(bindGas);
+updateGasUI();
+
+// 计算并更新图表
+function updateData() {
+  const dims = {
+    magnetic: Math.min(1, state.gravity * state.spinSpeed * 0.4),
+    tempVariation: 1 - Math.min((80 * (1 - Math.min(state.atmosphere / 5, 1)) * (1 - Math.min(state.spinSpeed / 3, 1) * 0.4) + 3) / 80, 1),
+    light: 1 - Math.min(Math.abs(((state.temperature + 80) / 200 * (1 + state.radiation / 100)) - 1.0) / 2, 1),
+    geological: 0.98
+  };
+  ['magnetic', 'tempVariation', 'light', 'geological'].forEach(k => {
+    const el = document.querySelector(`[data-derived="${k}"] .dv-num`);
+    if (el) el.textContent = dims[k].toFixed(2);
   });
-  canvas.addEventListener('pointermove', (e) => {
-    if (!isDragging) return;
-    targetPhi -= (e.clientX - lastX) * 0.01;
-    targetTheta += (e.clientY - lastY) * 0.01;
-    targetTheta = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetTheta));
-    lastX = e.clientX; lastY = e.clientY;
+
+  drawChart();
+}
+
+const chartCanvas = document.getElementById('chart-canvas');
+const ctx = chartCanvas.getContext('2d');
+function drawChart() {
+  const w = chartCanvas.clientWidth, h = chartCanvas.clientHeight;
+  if (!w || !h) return;
+  chartCanvas.width = w * 2; chartCanvas.height = h * 2;
+  ctx.scale(2, 2); ctx.clearRect(0, 0, w, h);
+
+  const vals = [
+    state.temperature / 100, state.gases.O2 / 100, state.atmosphere / 5, 
+    state.gravity / 3, 1 - state.radiation / 100, state.spinSpeed / 3,
+    0.8, 0.5, 0.9, 0.6
+  ];
+  const barW = w / 10;
+  vals.forEach((val, i) => {
+    const x = i * barW + barW / 2;
+    const barH = Math.max(5, Math.min(1, Math.max(0, val)) * (h - 20));
+    const baseY = h - 10;
+    const grad = ctx.createLinearGradient(0, baseY, 0, baseY - barH);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0.05)'); grad.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
+    ctx.fillStyle = grad; ctx.fillRect(x - barW*0.3, baseY - barH, barW*0.6, barH);
+    ctx.fillStyle = '#fff'; ctx.shadowBlur = 8; ctx.shadowColor = '#fff';
+    ctx.beginPath(); ctx.arc(x, baseY - barH, 2, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
   });
-  canvas.addEventListener('pointerup', (e) => {
-    isDragging = false; autoRotate = true;
-    canvas.releasePointerCapture(e.pointerId);
-  });
+}
+setTimeout(() => { updateData(); }, 100);
+window.addEventListener('resize', drawChart);
+
 </script>
 </body>
 </html>
