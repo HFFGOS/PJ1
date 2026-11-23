@@ -3,788 +3,146 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Planet Lab — Patrick</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=Fira+Code:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<title>Planet Lab · Ultra</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500&family=Fira+Code&display=swap" rel="stylesheet">
 <style>
-:root {
-  --ink: #f4f2ff;
-  --ink-2: rgba(236,232,255,.72);
-  --ink-3: rgba(220,214,255,.5);
-  --peri: #6f78ff;
-  --peri-2: #8d94ff;
-  --bronze: #cda87d;
-  --frost: #dbe4ee;
-  --bg: #000000;
-  --bg-2: #14103a;
-  --line: rgba(196,178,255,.15);
-  --glass: rgba(20,13,56,.55);
-  --glass-strong: rgba(20,13,56,.85);
-  --accent-glow: rgba(141,148,255,.4);
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: 'Inter Tight', system-ui, sans-serif;
-  overflow-x: hidden;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-.mono { font-family: 'Fira Code', monospace; }
-.serif { font-family: 'Instrument Serif', serif; font-style: italic; }
+  :root {
+    --bg: #000000;
+    --panel-bg: rgba(15, 15, 18, 0.7);
+    --border: rgba(255, 255, 255, 0.1);
+    --text-main: #ffffff;
+    --text-muted: #888;
+    --accent: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text-main);
+    font-family: 'Inter Tight', sans-serif;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; overflow: hidden;
+  }
+  .layout {
+    display: flex; gap: 24px; width: 100%; max-width: 1400px; padding: 24px;
+  }
+  .panel {
+    background: var(--panel-bg); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; backdrop-filter: blur(20px);
+  }
+  
+  /* 星球区域 */
+  .left-panel {
+    flex: 1; display: flex; justify-content: center; align-items: center;
+    min-height: 600px; position: relative; overflow: hidden;
+  }
+  #planet-canvas {
+    width: 100%; height: 100%; max-width: 800px; max-height: 800px;
+    cursor: grab; touch-action: none;
+  }
+  #planet-canvas:active { cursor: grabbing; }
+  
+  /* 右侧控制区域 */
+  .right-panel {
+    width: 380px; display: flex; flex-direction: column; gap: 24px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  /* 隐藏滚动条 */
+  .right-panel::-webkit-scrollbar { width: 4px; }
+  .right-panel::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
-/* 顶部导航 */
-header.top-bar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  padding: 18px 32px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(13,8,48,.6);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--line);
-}
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--ink-2);
-  text-decoration: none;
-  font-size: 13px;
-  transition: color .25s;
-}
-.back-link:hover { color: var(--frost); }
-.back-link svg { width: 14px; height: 14px; }
-.page-title {
-  font-family: 'Instrument Serif', serif;
-  font-style: italic;
-  font-size: 22px;
-  letter-spacing: .02em;
-  background: linear-gradient(90deg, #a5b8ff, #d4a7ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.top-actions { display: flex; gap: 10px; }
-.top-btn {
-  background: rgba(111,120,255,.12);
-  border: 1px solid rgba(141,148,255,.28);
-  color: var(--frost);
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-family: 'Fira Code', monospace;
-  letter-spacing: .04em;
-  cursor: pointer;
-  transition: all .25s;
-}
-.top-btn:hover {
-  background: rgba(111,120,255,.25);
-  box-shadow: 0 0 18px var(--accent-glow);
-}
-.top-btn.primary {
-  background: linear-gradient(135deg, rgba(111,120,255,.4), rgba(205,168,125,.25));
-  border-color: rgba(205,168,125,.45);
-}
-.top-btn.primary:hover {
-  background: linear-gradient(135deg, rgba(111,120,255,.55), rgba(205,168,125,.4));
-  box-shadow: 0 0 24px rgba(205,168,125,.4);
-}
+  .control-group { margin-bottom: 12px; }
+  .group-title {
+    font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 16px; border-bottom: 1px dashed var(--border); padding-bottom: 8px;
+  }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; font-size: 13px;
+  }
+  .row span { width: 60px; }
+  .row output { width: 60px; text-align: right; font-family: 'Fira Code', monospace; }
+  
+  /* 完美的白轨滑杆 */
+  input[type="range"] {
+    -webkit-appearance: none; flex: 1; background: transparent; margin: 0 10px; height: 20px;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%; height: 4px; background: #ffffff; border-radius: 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; margin-top: -5px;
+    box-shadow: 0 0 10px var(--accent); transition: transform 0.1s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type="range"]:disabled::-webkit-slider-runnable-track { background: #333; }
+  input[type="range"]:disabled::-webkit-slider-thumb { background: #555; box-shadow: none; cursor: not-allowed; }
+  
+  /* 锁按钮 */
+  .lock-btn {
+    background: none; border: none; font-size: 14px; cursor: pointer;
+    opacity: 0.3; transition: all 0.2s; padding: 0 5px;
+  }
+  .lock-btn:hover { opacity: 0.8; }
+  .lock-btn.locked { opacity: 1; filter: drop-shadow(0 0 5px #fbbf24); }
 
-/* 主体三栏 */
-main.lab {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 24px 32px 120px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
-  grid-template-rows: auto auto;
-  gap: 24px;
-}
+  /* 底部图表 */
+  .chart-container {
+    width: 100%; height: 100px; margin-top: 10px;
+  }
+  #chart-canvas { width: 100%; height: 100%; }
 
-/* 卡片通用 */
-.panel {
-  background: var(--glass);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  backdrop-filter: blur(20px) saturate(1.3);
-  box-shadow:
-    0 20px 60px rgba(0,0,0,.4),
-    inset 0 1px 0 rgba(255,255,255,.04);
-  overflow: hidden;
-}
-.panel-head {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.panel-title {
-  font-size: 11px;
-  font-family: 'Fira Code', monospace;
-  letter-spacing: .14em;
-  color: var(--ink-3);
-  text-transform: uppercase;
-}
-.panel-body { padding: 20px; }
-
-/* 左侧：星球 */
-#planet-panel { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; }
-#planet-stage {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-}
-#planet-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border-radius: 50%;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-}
-#planet-canvas.painting { cursor: crosshair; }
-#planet-canvas.grabbing { cursor: grabbing; }
-
-/* 工具栏 */
-.brush-bar {
-  padding: 12px 20px;
-  border-top: 1px solid var(--line);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.brush-btn {
-  background: rgba(111,120,255,.08);
-  border: 1px solid rgba(141,148,255,.2);
-  color: var(--ink-2);
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-family: 'Fira Code', monospace;
-  cursor: pointer;
-  transition: all .2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.brush-btn:hover { color: var(--frost); border-color: rgba(141,148,255,.5); }
-.brush-btn.active {
-  background: rgba(111,120,255,.3);
-  border-color: var(--peri-2);
-  color: #fff;
-  box-shadow: 0 0 16px var(--accent-glow);
-}
-.brush-btn.danger.active {
-  background: rgba(255,120,150,.22);
-  border-color: rgba(255,120,150,.6);
-  box-shadow: 0 0 16px rgba(255,120,150,.4);
-}
-.brush-btn.gold.active {
-  background: rgba(205,168,125,.25);
-  border-color: var(--bronze);
-  box-shadow: 0 0 16px rgba(205,168,125,.4);
-}
-.brush-size {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 11px;
-  color: var(--ink-3);
-  font-family: 'Fira Code', monospace;
-}
-.brush-size input[type="range"] { width: 100px; }
-
-/* 右侧：控制 */
-#controls-panel { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; max-height: 700px; }
-#controls-body { overflow-y: auto; flex: 1; }
-#controls-body::-webkit-scrollbar { width: 4px; }
-#controls-body::-webkit-scrollbar-thumb { background: rgba(205,190,255,.2); border-radius: 2px; }
-
-.control-group { margin-bottom: 24px; }
-.control-group-title {
-  font-size: 10px;
-  font-family: 'Fira Code', monospace;
-  letter-spacing: .12em;
-  color: var(--ink-3);
-  text-transform: uppercase;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.control-group-title::before {
-  content: '';
-  display: block;
-  width: 3px;
-  height: 10px;
-  background: var(--peri-2);
-  border-radius: 2px;
-}
-.control-group-title.derived::before { background: var(--bronze); }
-
-.ctrl-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.ctrl-label {
-  font-size: 12px;
-  color: var(--ink-2);
-  min-width: 88px;
-}
-.ctrl-row input[type="range"] {
-  flex: 1;
-  -webkit-appearance: none;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(205,190,255,.12);
-  outline: none;
-  cursor: pointer;
-}
-.ctrl-row input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--peri-2);
-  box-shadow: 0 0 12px var(--peri-2);
-  cursor: grab;
-  transition: transform .15s;
-}
-.ctrl-row input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
-.ctrl-row input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--peri-2);
-  border: none;
-  box-shadow: 0 0 12px var(--peri-2);
-}
-.ctrl-value {
-  font-family: 'Fira Code', monospace;
-  font-size: 12px;
-  color: var(--frost);
-  min-width: 70px;
-  text-align: right;
-  transition: color .2s;
-}
-
-/* 元素混合器 */
-.gas-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-.gas-label {
-  font-size: 12px;
-  font-family: 'Fira Code', monospace;
-  color: var(--ink-2);
-  min-width: 40px;
-}
-.gas-row input[type="range"] { flex: 1; }
-.gas-value {
-  font-family: 'Fira Code', monospace;
-  font-size: 11px;
-  color: var(--frost);
-  min-width: 56px;
-  text-align: right;
-}
-.gas-sum {
-  display: flex;
-  justify-content: space-between;
-  padding-top: 8px;
-  margin-top: 8px;
-  border-top: 1px dashed var(--line);
-  font-size: 11px;
-  font-family: 'Fira Code', monospace;
-  color: var(--ink-3);
-}
-
-/* 推导值 */
-.derived-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.derived-item {
-  background: rgba(205,168,125,.06);
-  border: 1px solid rgba(205,168,125,.2);
-  border-radius: 10px;
-  padding: 12px;
-  position: relative;
-  transition: all .3s;
-}
-.derived-item.flash {
-  background: rgba(205,168,125,.16);
-  border-color: var(--bronze);
-  box-shadow: 0 0 20px rgba(205,168,125,.3);
-}
-.derived-label {
-  font-size: 10px;
-  color: var(--ink-3);
-  font-family: 'Fira Code', monospace;
-  letter-spacing: .05em;
-}
-.derived-value {
-  font-size: 18px;
-  color: var(--bronze);
-  font-family: 'Fira Code', monospace;
-  margin-top: 4px;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-.derived-arrow {
-  font-size: 11px;
-  opacity: 0;
-  transition: opacity .3s;
-}
-.derived-arrow.show { opacity: 1; }
-.derived-arrow.up { color: #7cf0bd; }
-.derived-arrow.down { color: #ff8fd8; }
-
-/* 底部宜居度 + 沙粒图 */
-#bottom-panel {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 0;
-}
-.habitability-block {
-  padding: 28px;
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.habitability-label {
-  font-family: 'Fira Code', monospace;
-  font-size: 10px;
-  letter-spacing: .15em;
-  color: var(--ink-3);
-  margin-bottom: 6px;
-}
-.habitability-score {
-  font-size: 64px;
-  font-weight: 300;
-  line-height: 1;
-  color: var(--frost);
-  transition: color .4s;
-}
-.habitability-tier {
-  margin-top: 10px;
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-family: 'Fira Code', monospace;
-  font-size: 11px;
-  letter-spacing: .05em;
-  border: 1px solid;
-  align-self: flex-start;
-  transition: all .3s;
-}
-.chart-block { padding: 20px; }
-#chart-canvas { width: 100%; height: 220px; display: block; }
-
-/* Toast */
-.toast {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: var(--glass-strong);
-  border: 1px solid rgba(205,190,255,.4);
-  color: var(--frost);
-  padding: 12px 26px;
-  border-radius: 12px;
-  font-family: 'Fira Code', monospace;
-  font-size: 13px;
-  letter-spacing: .08em;
-  z-index: 9999;
-  opacity: 0;
-  pointer-events: none;
-  box-shadow: 0 12px 40px rgba(110,90,240,.5);
-  transition: all .35s cubic-bezier(.2,.8,.2,1);
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* 移动端 */
-@media (max-width: 980px) {
-  main.lab { grid-template-columns: 1fr; padding: 16px 16px 80px; }
-  #planet-panel { grid-row: 1; }
-  #controls-panel { grid-row: 2; max-height: none; }
-  #bottom-panel { grid-row: 3; grid-template-columns: 1fr; }
-  .habitability-block { border-right: none; border-bottom: 1px solid var(--line); }
-  header.top-bar { padding: 14px 18px; }
-  .page-title { font-size: 18px; }
-  .top-btn { padding: 6px 12px; font-size: 11px; }
-  .habitability-score { font-size: 52px; }
-}
-  /* 👇 转场遮罩样式 */
-#noise-transition-canvas {
-    position: fixed; inset: 0; width: 100vw; height: 100vh;
-    z-index: 9999999; pointer-events: auto;
-}
-.back-link {
-    cursor: pointer; background: none; border: none; font-family: inherit;
-}
-  /* =========================================================
-   Ultra 极客风黑金主题与全新滑杆
-   ========================================================= */
-:root {
-  --bg: #000000 !important; /* 强制纯黑背景 */
-  --glass: rgba(10, 10, 10, 0.85);
-  --line: rgba(255, 255, 255, 0.1);
-  --ink-2: rgba(255, 255, 255, 0.8);
-  --ink-3: rgba(255, 255, 255, 0.5);
-  --bronze: #d4af37; /* 香槟金 */
-}
-
-body {
-  background: #000000 !important;
-}
-
-/* 锁定按钮样式 */
-.lock-btn {
-  background: none;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 0 8px;
-  opacity: 0.5;
-  transition: all 0.2s;
-  filter: grayscale(1);
-}
-.lock-btn:hover {
-  opacity: 0.9;
-  filter: grayscale(0);
-}
-/* 锁定时的发光效果 */
-.lock-btn.locked {
-  opacity: 1;
-  filter: grayscale(0) drop-shadow(0 0 6px rgba(255, 215, 0, 0.8));
-}
-
-/* 气体行布局微调 */
-.gas-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.gas-row input[type="range"] {
-  flex: 1;
-  margin: 0 10px;
-}
-.gas-value {
-  font-family: 'Fira Code', monospace;
-  font-size: 13px;
-  color: #fff;
-  min-width: 60px;
-  text-align: right;
-}
-
-/* 完美的白轨+高亮滑块样式 */
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  background: transparent;
-  height: 20px;
-}
-input[type="range"]:focus {
-  outline: none;
-}
-/* 轨道 (纯白) */
-input[type="range"]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 4px;
-  cursor: pointer;
-  background: #ffffff;
-  border-radius: 2px;
-}
-/* 滑块 (亮蓝色) */
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 14px;
-  width: 14px;
-  border-radius: 50%;
-  background: #3b82f6;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
-  cursor: pointer;
-  margin-top: -5px;
-  transition: transform 0.1s;
-}
-input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-/* 滑杆禁用状态（锁定后） */
-input[type="range"]:disabled::-webkit-slider-runnable-track {
-  background: rgba(255, 255, 255, 0.2);
-}
-input[type="range"]:disabled::-webkit-slider-thumb {
-  background: #666;
-  box-shadow: none;
-}
-  /* =========================================================
-   全新滑杆与锁样式
-   ========================================================= */
-.lock-btn {
-  background: none;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 0 8px;
-  opacity: 0.4;
-  transition: all 0.2s;
-  filter: grayscale(1);
-}
-.lock-btn:hover {
-  opacity: 0.8;
-  filter: grayscale(0);
-}
-.lock-btn.locked {
-  opacity: 1;
-  filter: grayscale(0) drop-shadow(0 0 6px rgba(255, 215, 0, 0.8));
-}
-
-.gas-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.gas-row input[type="range"] {
-  flex: 1;
-  margin: 0 10px;
-}
-.gas-value {
-  font-family: 'Fira Code', monospace;
-  font-size: 13px;
-  color: #fff;
-  min-width: 60px;
-  text-align: right;
-}
-
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  background: transparent;
-  height: 20px;
-}
-input[type="range"]:focus { outline: none; }
-input[type="range"]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 4px;
-  cursor: pointer;
-  background: #ffffff;
-  border-radius: 2px;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 14px;
-  width: 14px;
-  border-radius: 50%;
-  background: #3b82f6;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
-  cursor: pointer;
-  margin-top: -5px;
-  transition: transform 0.1s;
-}
-input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-input[type="range"]:disabled::-webkit-slider-runnable-track {
-  background: rgba(255, 255, 255, 0.2);
-}
-input[type="range"]:disabled::-webkit-slider-thumb {
-  background: #666;
-  box-shadow: none;
-}
+  .back-btn {
+    display: inline-block; padding: 8px 16px; color: var(--text-muted);
+    text-decoration: none; font-size: 13px; transition: color 0.2s;
+  }
+  .back-btn:hover { color: #fff; }
 </style>
 </head>
 <body>
-      <canvas id="noise-transition-canvas"></canvas>
 
-<header class="top-bar">
-<!-- 👇 把原来的 <a> 换成 <button>，加上 id="btn-back" -->
-<button id="btn-back" class="back-link">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Back to Home
-</button>
-  <div class="page-title">Planet Lab · 星球实验室</div>
-  <div class="top-actions">
-    <button class="top-btn" id="btn-reset">重置</button>
-    <button class="top-btn" id="btn-save">保存</button>
-    <button class="top-btn primary" id="btn-share">分享</button>
+<div class="layout">
+  <!-- 左侧：真实点阵地球 -->
+  <div class="panel left-panel">
+    <canvas id="planet-canvas"></canvas>
   </div>
-</header>
-
-<main class="lab">
-
-  <!-- 左侧：星球渲染 -->
-  <section class="panel" id="planet-panel">
-    <div class="panel-head">
-      <span class="panel-title">Planet · 星球</span>
-      <span class="mono" style="font-size:10px; color:var(--ink-3);" id="planet-status">点击星球绘制 · 右键或拖拽旋转视角</span>
-    </div>
-    <div id="planet-stage">
-      <canvas id="planet-canvas"></canvas>
-    </div>
-  </section>
 
   <!-- 右侧：控制面板 -->
-  <section class="panel" id="controls-panel">
-    <div class="panel-head">
-      <span class="panel-title">Control · 参数</span>
+  <div class="panel right-panel">
+    <div>
+      <a href="index.html" class="back-btn">← Back to Home</a>
     </div>
-    <div class="panel-body" id="controls-body">
-
-      <!-- 直接控制 -->
-      <div class="control-group">
-        <div class="control-group-title">直接控制 · Direct</div>
-
-        <div class="ctrl-row">
-          <span class="ctrl-label">表面温度</span>
-          <input type="range" id="ctrl-temperature" min="-80" max="200" step="1" value="15">
-          <span class="ctrl-value" data-value="temperature">15°C</span>
-        </div>
-
-        <div class="ctrl-row">
-          <span class="ctrl-label">大气压力</span>
-          <input type="range" id="ctrl-atmosphere" min="0" max="5" step="0.05" value="1">
-          <span class="ctrl-value" data-value="atmosphere">1.00 atm</span>
-        </div>
-
-        <div class="ctrl-row">
-          <span class="ctrl-label">表面重力</span>
-          <input type="range" id="ctrl-gravity" min="0.1" max="3" step="0.05" value="1">
-          <span class="ctrl-value" data-value="gravity">1.00 g</span>
-        </div>
-
-        <div class="ctrl-row">
-          <span class="ctrl-label">辐射水平</span>
-          <input type="range" id="ctrl-radiation" min="0" max="100" step="1" value="12">
-          <span class="ctrl-value" data-value="radiation">12%</span>
-        </div>
-
-        <div class="ctrl-row">
-          <span class="ctrl-label">自转速度</span>
-          <input type="range" id="ctrl-spin" min="0" max="3" step="0.05" value="1">
-          <span class="ctrl-value" data-value="spin">1.00×</span>
-        </div>
-      </div>
-
-      <!-- 元素 DIY -->
-            <!-- 元素 DIY -->
-      <div class="control-group">
-        <div class="control-group-title">大气成分 · Atmosphere Mix</div>
-
-        <div class="gas-row">
-          <span class="gas-label">O₂</span>
-          <button class="lock-btn" data-lock="O2">🔓</button>
-          <input type="range" id="gas-O2" min="0" max="99" step="0.1" value="21">
-          <span class="gas-value" data-gas="O2">21.0%</span>
-        </div>
-        <div class="gas-row">
-          <span class="gas-label">N₂</span>
-          <button class="lock-btn" data-lock="N2">🔓</button>
-          <input type="range" id="gas-N2" min="0" max="99" step="0.1" value="78">
-          <span class="gas-value" data-gas="N2">78.0%</span>
-        </div>
-        <div class="gas-row">
-          <span class="gas-label">CO₂</span>
-          <button class="lock-btn" data-lock="CO2">🔓</button>
-          <input type="range" id="gas-CO2" min="0" max="99" step="0.1" value="0.04">
-          <span class="gas-value" data-gas="CO2">0.0%</span>
-        </div>
-        <div class="gas-row">
-          <span class="gas-label">Ar</span>
-          <button class="lock-btn" data-lock="Ar">🔓</button>
-          <input type="range" id="gas-Ar" min="0" max="99" step="0.1" value="0.92">
-          <span class="gas-value" data-gas="Ar">0.9%</span>
-        </div>
-
-        <div class="gas-sum">
-          <span>总和</span>
-          <span id="gas-sum-val">100.0%</span>
-        </div>
-      </div>
-
-
-      <!-- 联动推导 -->
-      <div class="control-group">
-        <div class="control-group-title derived">联动推导 · Derived</div>
-        <div class="derived-grid">
-          <div class="derived-item" data-derived="magnetic">
-            <div class="derived-label">磁场保护</div>
-            <div class="derived-value">
-              <span class="dv-num">0.00</span>
-              <span class="derived-arrow">↑</span>
-            </div>
-          </div>
-          <div class="derived-item" data-derived="tempVariation">
-            <div class="derived-label">昼夜温差</div>
-            <div class="derived-value">
-              <span class="dv-num">0.00</span>
-              <span class="derived-arrow">↑</span>
-            </div>
-          </div>
-          <div class="derived-item" data-derived="light">
-            <div class="derived-label">光照强度</div>
-            <div class="derived-value">
-              <span class="dv-num">0.00</span>
-              <span class="derived-arrow">↑</span>
-            </div>
-          </div>
-          <div class="derived-item" data-derived="geological">
-            <div class="derived-label">地质稳定</div>
-            <div class="derived-value">
-              <span class="dv-num">0.00</span>
-              <span class="derived-arrow">↑</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    
+    <div class="control-group">
+      <div class="group-title">直接控制 · Direct</div>
+      <div class="row"><span>温度</span><input type="range" id="ctrl-temperature" min="-80" max="200" value="15"><output data-value="temperature">15°C</output></div>
+      <div class="row"><span>气压</span><input type="range" id="ctrl-atmosphere" min="0" max="5" step="0.05" value="1"><output data-value="atmosphere">1.00 atm</output></div>
+      <div class="row"><span>重力</span><input type="range" id="ctrl-gravity" min="0.1" max="3" step="0.05" value="1"><output data-value="gravity">1.00 g</output></div>
+      <div class="row"><span>辐射</span><input type="range" id="ctrl-radiation" min="0" max="100" value="12"><output data-value="radiation">12%</output></div>
+      <div class="row"><span>自转</span><input type="range" id="ctrl-spin" min="0" max="3" step="0.05" value="1"><output data-value="spinSpeed">1.00×</output></div>
     </div>
-  </section>
 
-  <!-- 底部：宜居度 + 沙粒柱状图 -->
-  <section class="panel" id="bottom-panel">
-    <div class="habitability-block">
-      <div class="habitability-label">HABITABILITY INDEX</div>
-      <div class="habitability-score" id="hab-score">—</div>
-      <div class="habitability-tier" id="hab-tier">—</div>
+    <div class="control-group">
+      <div class="group-title">大气成分 · Atmosphere</div>
+      <div class="row"><span>O₂</span><button class="lock-btn" data-lock="O2">🔓</button><input type="range" id="gas-O2" min="0" max="99" step="0.1" value="21"><output data-gas="O2">21.0%</output></div>
+      <div class="row"><span>N₂</span><button class="lock-btn" data-lock="N2">🔓</button><input type="range" id="gas-N2" min="0" max="99" step="0.1" value="78"><output data-gas="N2">78.0%</output></div>
+      <div class="row"><span>CO₂</span><button class="lock-btn" data-lock="CO2">🔓</button><input type="range" id="gas-CO2" min="0" max="99" step="0.1" value="0.04"><output data-gas="CO2">0.0%</output></div>
+      <div class="row"><span>Ar</span><button class="lock-btn" data-lock="Ar">🔓</button><input type="range" id="gas-Ar" min="0" max="99" step="0.1" value="0.92"><output data-gas="Ar">0.9%</output></div>
+      <div class="row" style="margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px;">
+        <span>总和</span><output id="gas-sum-val">100.0%</output>
+      </div>
     </div>
-    <div class="chart-block">
+
+    <div class="chart-container">
       <canvas id="chart-canvas"></canvas>
     </div>
-  </section>
-
-</main>
-
-<div class="toast" id="toast"></div>
+  </div>
+</div>
 
 <script type="module">
-import createGlobe from 'https://esm.sh/cobe';
+// 注意这里换成了更稳的 jsDelivr CDN
+import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe@0.6.3/dist/cobe.js';
 
-// ==========================================
-// 1. 基础状态与配置
-// ==========================================
 const state = {
   temperature: 15, atmosphere: 1.0, gravity: 1.0, radiation: 12, spinSpeed: 1.0,
   gases: { O2: 21, N2: 78, CO2: 0.04, Ar: 0.92 }
@@ -792,130 +150,70 @@ const state = {
 const GAS_MIN = { O2: 0.01, N2: 0.01, CO2: 0.01, Ar: 0.01 };
 const gasLocks = { O2: false, N2: false, CO2: false, Ar: false };
 
-// ==========================================
-// 2. 顶级真实地球渲染 (Cobe 引擎)
-// ==========================================
+// 1. 初始化 Cobe 地球
 const canvas = document.getElementById('planet-canvas');
-let phi = 0;
-let theta = 0.3;
+let phi = 0, theta = 0.3;
+let targetPhi = 0, targetTheta = 0.3;
 let isDragging = false, lastX = 0, lastY = 0;
 let autoRotate = true;
 
-const globe = createGlobe(canvas, {
-  devicePixelRatio: 2,
-  width: canvas.clientWidth * 2 || 1000,
-  height: canvas.clientHeight * 2 || 1000,
-  phi: 0,
-  theta: 0.3,
-  dark: 1,
-  diffuse: 1.2,
-  mapSamples: 40000,
-  mapBrightness: 6,
-  baseColor: [1, 1, 1],
-  markerColor: [0.2, 0.8, 1],
-  glowColor: [0.8, 0.8, 1],
-  markers: []
-});
-
-canvas.addEventListener('pointerdown', (e) => {
-  isDragging = true; lastX = e.clientX; lastY = e.clientY; autoRotate = false;
-});
-canvas.addEventListener('pointermove', (e) => {
-  if (!isDragging) return;
-  phi += (e.clientX - lastX) * 0.005;
-  theta -= (e.clientY - lastY) * 0.005;
-  theta = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, theta));
-  lastX = e.clientX; lastY = e.clientY;
-});
-window.addEventListener('pointerup', () => { isDragging = false; autoRotate = true; });
-
-let lastTime = performance.now();
-function loop(now) {
-  requestAnimationFrame(loop);
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
-  lastTime = now;
-  if (autoRotate && !isDragging) phi += dt * 0.1 * state.spinSpeed;
-  globe.update({ phi: phi, theta: theta });
-}
-requestAnimationFrame(loop);
-
-// 注意：这里删掉了报错的 globe.resize，cobe 会自动适应 canvas 的 CSS 尺寸
-
-// ==========================================
-// 3. 数据计算逻辑 (恢复左下角面板)
-// ==========================================
-function oxygenScore(o2) {
-  if (o2 < 12) return (o2 / 12) * 0.35;
-  if (o2 < 21) return 0.6 + (o2 - 12) / 9 * 0.4;
-  if (o2 < 30) return 1.0 - (o2 - 21) / 9 * 0.25;
-  return Math.max(0.2, 0.75 - (o2 - 30) / 70 * 0.5);
-}
-
-function computeDimensions() {
-  const dims = {};
-  dims.temperature = 1 - Math.min(Math.abs(state.temperature - 15) / 100, 1);
-  dims.water = 0.72;
-  dims.atmosphere = 1 - Math.min(Math.abs(state.atmosphere - 1.0) / 3.0, 1);
-  dims.oxygen = oxygenScore(state.gases.O2);
-  dims.gravity = 1 - Math.min(Math.abs(state.gravity - 1.0) / 2.0, 1);
-  dims.radiation = 1 - state.radiation / 100;
-  dims.magnetic = Math.min(1, state.gravity * state.spinSpeed * 0.4);
-  const deltaT = 80 * (1 - Math.min(state.atmosphere / 5, 1)) * (1 - Math.min(state.spinSpeed / 3, 1) * 0.4) + 3;
-  dims.tempVariation = 1 - Math.min(deltaT / 80, 1);
-  const lightLevel = (state.temperature + 80) / 200 * (1 + state.radiation / 100);
-  dims.light = 1 - Math.min(Math.abs(lightLevel - 1.0) / 2, 1);
-  dims.geological = 0.98;
-  return dims;
-}
-
-const WEIGHTS = { temperature: 1.2, water: 1.3, atmosphere: 1.0, oxygen: 1.5, gravity: 0.9, radiation: 1.0, magnetic: 0.8, tempVariation: 0.7, light: 0.6, geological: 0.7 };
-const DIM_ORDER = ['temperature','water','atmosphere','oxygen','gravity','radiation','magnetic','tempVariation','light','geological'];
-
-function updateHabitability() {
-  const dims = computeDimensions();
-  let product = 1, sum = 0;
-  for (const key of DIM_ORDER) {
-    const w = WEIGHTS[key];
-    product *= Math.pow(Math.max(dims[key], 0.001), w);
-    sum += w;
-  }
-  const score = Math.pow(product, 1 / sum);
-  const pct = Math.round(score * 100);
-  
-  const scoreEl = document.getElementById('hab-score');
-  const tierEl = document.getElementById('hab-tier');
-  
-  if(scoreEl) scoreEl.textContent = pct;
-  if(tierEl) {
-    let color = '#ff5c5c', label = '致命 · Lethal';
-    if (score >= 0.75) { color = '#7cf0bd'; label = '宜居 · Earth-like'; }
-    else if (score >= 0.55) { color = '#e6cca6'; label = '勉强宜居 · Marginal'; }
-    else if (score >= 0.35) { color = '#ff8fd8'; label = '严酷 · Hostile'; }
-    tierEl.textContent = label;
-    tierEl.style.color = color;
-    tierEl.style.borderColor = color + '66';
-    tierEl.style.background = color + '18';
-  }
-
-  const derivedKeys = ['magnetic', 'tempVariation', 'light', 'geological'];
-  for (const key of derivedKeys) {
-    const el = document.querySelector(`[data-derived="${key}"] .dv-num`);
-    if (el) el.textContent = dims[key].toFixed(2);
-  }
-}
-
-// ==========================================
-// 4. 滑杆与气体锁定逻辑
-// ==========================================
-function bindSlider(id, key, formatter) {
-  const el = document.getElementById(id); const valEl = document.querySelector(`[data-value="${key}"]`);
-  if(!el) return;
-  el.addEventListener('input', (e) => { 
-    state[key] = parseFloat(e.target.value); 
-    if (valEl) valEl.textContent = formatter(state[key]); 
-    updateHabitability();
+// 防止 CDN 挂掉导致后面全不执行
+try {
+  const globe = createGlobe(canvas, {
+    devicePixelRatio: 2,
+    width: canvas.clientWidth * 2 || 1000,
+    height: canvas.clientHeight * 2 || 1000,
+    phi: 0, theta: 0.3,
+    dark: 1, diffuse: 1.2,
+    mapSamples: 40000,
+    mapBrightness: 6,
+    baseColor: [1, 1, 1],
+    markerColor: [0.2, 0.8, 1],
+    glowColor: [0.8, 0.8, 1]
   });
-  state[key] = parseFloat(el.value); 
+
+  function animate() {
+    if (autoRotate && !isDragging) targetPhi += 0.003 * state.spinSpeed;
+    // 惯性平滑
+    phi += (targetPhi - phi) * 0.1;
+    theta += (targetTheta - theta) * 0.1;
+    globe.update({ phi, theta });
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+
+  // 2. 地球拖拽交互
+  canvas.addEventListener('pointerdown', (e) => {
+    isDragging = true; autoRotate = false;
+    lastX = e.clientX; lastY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    targetPhi -= (e.clientX - lastX) * 0.01;
+    targetTheta += (e.clientY - lastY) * 0.01;
+    targetTheta = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetTheta));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  canvas.addEventListener('pointerup', (e) => {
+    isDragging = false; autoRotate = true;
+    canvas.releasePointerCapture(e.pointerId);
+  });
+} catch (e) {
+  console.warn('地球渲染库加载失败，但滑杆和锁依然可用', e);
+}
+
+// 3. 滑杆绑定
+function bindSlider(id, key, formatter) {
+  const el = document.getElementById(id);
+  const valEl = document.querySelector(`[data-value="${key}"]`);
+  if (!el) return;
+  el.addEventListener('input', (e) => {
+    state[key] = parseFloat(e.target.value);
+    if (valEl) valEl.textContent = formatter(state[key]);
+    updateChart();
+  });
+  state[key] = parseFloat(el.value);
   if (valEl) valEl.textContent = formatter(state[key]);
 }
 bindSlider('ctrl-temperature', 'temperature', v => `${v.toFixed(0)}°C`);
@@ -924,30 +222,34 @@ bindSlider('ctrl-gravity', 'gravity', v => `${v.toFixed(2)} g`);
 bindSlider('ctrl-radiation', 'radiation', v => `${v.toFixed(0)}%`);
 bindSlider('ctrl-spin', 'spinSpeed', v => `${v.toFixed(2)}×`);
 
+// 4. 锁定与气体算法
 document.querySelectorAll('.lock-btn').forEach(btn => {
   btn.addEventListener('click', (e) => {
     const key = e.target.dataset.lock;
     gasLocks[key] = !gasLocks[key];
     e.target.textContent = gasLocks[key] ? '🔒' : '🔓';
     e.target.classList.toggle('locked', gasLocks[key]);
-    document.getElementById(`gas-${key}`).disabled = gasLocks[key];
+    const slider = document.getElementById(`gas-${key}`);
+    if (slider) slider.disabled = gasLocks[key];
   });
 });
 
 function bindGas(key) {
   const el = document.getElementById(`gas-${key}`);
-  if(!el) return;
-  el.addEventListener('input', (e) => { 
-    setGas(key, parseFloat(e.target.value), el); 
-    updateGasUI(); 
-    updateHabitability();
+  if (!el) return;
+  el.addEventListener('input', (e) => {
+    setGas(key, parseFloat(e.target.value), el);
+    updateGasUI();
+    updateChart();
   });
 }
 
 function setGas(key, value, el) {
   value = Math.max(GAS_MIN[key], Math.min(99, value));
   const others = Object.keys(state.gases).filter(k => k !== key);
-  let lockedSum = 0; others.forEach(k => { if (gasLocks[k]) lockedSum += state.gases[k]; });
+  let lockedSum = 0;
+  others.forEach(k => { if (gasLocks[k]) lockedSum += state.gases[k]; });
+  
   let remaining = 100 - value - lockedSum;
   if (remaining < 0) { value = 100 - lockedSum; remaining = 0; if (el) el.value = value; }
   
@@ -963,75 +265,66 @@ function setGas(key, value, el) {
     }
   }
   state.gases[key] = value;
+  
   const sum = Object.values(state.gases).reduce((a, b) => a + b, 0);
   const diff = 100 - sum;
-  if (Math.abs(diff) > 0.0001) {
+  if (Math.abs(diff) > 0.001) {
     const absorber = unlockedOthers.length > 0 ? unlockedOthers[0] : key;
-    state.gases[absorber] += diff;
+    state.gases[absorber] = Math.max(GAS_MIN[absorber], state.gases[absorber] + diff);
   }
 }
 
 function updateGasUI() {
   for (const k of Object.keys(state.gases)) {
-    const el = document.getElementById(`gas-${k}`); const valEl = document.querySelector(`[data-gas="${k}"]`);
-    if (el) el.value = state.gases[k];
+    const el = document.getElementById(`gas-${k}`); 
+    const valEl = document.querySelector(`[data-gas="${k}"]`);
+    if (el && !gasLocks[k]) el.value = state.gases[k];
     if (valEl) valEl.textContent = `${state.gases[k].toFixed(1)}%`;
   }
   const sumEl = document.getElementById('gas-sum-val');
   if (sumEl) sumEl.textContent = `${Object.values(state.gases).reduce((a, b) => a + b, 0).toFixed(1)}%`;
 }
-
 ['O2','N2','CO2','Ar'].forEach(bindGas);
 updateGasUI();
-updateHabitability();
 
-// ==========================================
-// 5. 复活下方极简粒子柱状图
-// ==========================================
+// 5. 底部图表绘制
 const chartCanvas = document.getElementById('chart-canvas');
-if (chartCanvas) {
-  const ctx = chartCanvas.getContext('2d');
-  function drawChart() {
-    requestAnimationFrame(drawChart);
-    const w = chartCanvas.clientWidth, h = chartCanvas.clientHeight;
-    if (!w || !h) return;
-    chartCanvas.width = w * 2; chartCanvas.height = h * 2;
-    ctx.scale(2, 2);
-    ctx.clearRect(0, 0, w, h);
+const ctx = chartCanvas.getContext('2d');
+function updateChart() {
+  const w = chartCanvas.clientWidth, h = chartCanvas.clientHeight;
+  if (!w || !h) return;
+  chartCanvas.width = w * 2; chartCanvas.height = h * 2;
+  ctx.scale(2, 2);
+  ctx.clearRect(0, 0, w, h);
 
-    const dims = computeDimensions();
-    const values = DIM_ORDER.map(k => dims[k]);
-    const barW = w / 10;
+  // 模拟数据高度
+  const vals = [
+    state.temperature / 100, state.gases.O2 / 100, state.atmosphere / 5, 
+    state.gravity / 3, 1 - state.radiation / 100, state.spinSpeed / 3,
+    0.8, 0.5, 0.9, 0.6
+  ];
+  const barW = w / 10;
 
-    values.forEach((val, i) => {
-      const x = i * barW + barW / 2;
-      const barH = val * (h - 40);
-      const baseY = h - 20;
-      
-      // 发光底座
-      const grad = ctx.createLinearGradient(0, baseY, 0, baseY - barH);
-      grad.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
-      grad.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(x - barW*0.3, baseY - barH, barW*0.6, barH);
+  vals.forEach((val, i) => {
+    const x = i * barW + barW / 2;
+    const barH = Math.max(5, Math.min(1, val) * (h - 20));
+    const baseY = h - 10;
+    
+    const grad = ctx.createLinearGradient(0, baseY, 0, baseY - barH);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x - barW*0.3, baseY - barH, barW*0.6, barH);
 
-      // 顶部光点
-      ctx.fillStyle = '#fff';
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = '#fff';
-      ctx.beginPath();
-      ctx.arc(x, baseY - barH, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    });
-  }
-  drawChart();
+    ctx.fillStyle = '#fff';
+    ctx.shadowBlur = 8; ctx.shadowColor = '#fff';
+    ctx.beginPath(); ctx.arc(x, baseY - barH, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  });
 }
-
-// 返回主页按钮
-const btnBack = document.getElementById('btn-back');
-if (btnBack) btnBack.addEventListener('click', () => { window.location.href = 'index.html'; });
-
+// 等待DOM渲染完成后绘制一次
+setTimeout(updateChart, 100);
+window.addEventListener('resize', updateChart);
 </script>
 </body>
 </html>
