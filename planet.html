@@ -527,26 +527,31 @@ main.lab {
       </div>
 
       <!-- 元素 DIY -->
+            <!-- 元素 DIY -->
       <div class="control-group">
         <div class="control-group-title">大气成分 · Atmosphere Mix</div>
 
         <div class="gas-row">
           <span class="gas-label">O₂</span>
+          <button class="lock-btn" data-lock="O2">🔓</button>
           <input type="range" id="gas-O2" min="0" max="99" step="0.1" value="21">
           <span class="gas-value" data-gas="O2">21.0%</span>
         </div>
         <div class="gas-row">
           <span class="gas-label">N₂</span>
+          <button class="lock-btn" data-lock="N2">🔓</button>
           <input type="range" id="gas-N2" min="0" max="99" step="0.1" value="78">
           <span class="gas-value" data-gas="N2">78.0%</span>
         </div>
         <div class="gas-row">
           <span class="gas-label">CO₂</span>
+          <button class="lock-btn" data-lock="CO2">🔓</button>
           <input type="range" id="gas-CO2" min="0" max="99" step="0.1" value="0.04">
           <span class="gas-value" data-gas="CO2">0.0%</span>
         </div>
         <div class="gas-row">
           <span class="gas-label">Ar</span>
+          <button class="lock-btn" data-lock="Ar">🔓</button>
           <input type="range" id="gas-Ar" min="0" max="99" step="0.1" value="0.92">
           <span class="gas-value" data-gas="Ar">0.9%</span>
         </div>
@@ -556,6 +561,7 @@ main.lab {
           <span id="gas-sum-val">100.0%</span>
         </div>
       </div>
+
 
       <!-- 联动推导 -->
       <div class="control-group">
