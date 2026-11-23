@@ -779,11 +779,12 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 
 <div class="toast" id="toast"></div>
 
-<script>
-(function() {
-'use strict';
+<script type="module">
+import createGlobe from 'https://esm.sh/cobe';
 
-// 状态
+// ==========================================
+// 1. 数据与状态 (Ultra 满血版)
+// ==========================================
 const state = {
   temperature: 15, atmosphere: 1.0, gravity: 1.0, radiation: 12, spinSpeed: 1.0,
   gases: { O2: 21, N2: 78, CO2: 0.04, Ar: 0.92 }
@@ -791,150 +792,140 @@ const state = {
 const GAS_MIN = { O2: 0.01, N2: 0.01, CO2: 0.01, Ar: 0.01 };
 const gasLocks = { O2: false, N2: false, CO2: false, Ar: false };
 
-const camera = { yaw: 0, pitch: 0.15, distance: 2.8, fov: 45 };
-let autoRotate = true;
-const AUTO_ROTATE_SPEED = 0.12;
-
-// 生成地形贴图数据（只为点阵轮廓服务）
-const TERRAIN_W = 512; const TERRAIN_H = 256;
-const terrainData = new Uint8Array(TERRAIN_W * TERRAIN_H);
-for (let y = 0; y < TERRAIN_H; y++) {
-  const lat = (y / TERRAIN_H) * Math.PI - Math.PI / 2;
-  const cosLat = Math.cos(lat);
-  for (let x = 0; x < TERRAIN_W; x++) {
-    const lon = (x / TERRAIN_W) * Math.PI * 2;
-    const n1 = Math.sin(lon * 3 + 1.2) * Math.cos(lat * 4 + 0.5);
-    const n2 = Math.sin(lon * 5 - 2.1) * Math.cos(lat * 3 + 1.8);
-    const n3 = Math.sin(lon * 2 + 0.7) * Math.cos(lat * 6);
-    const noise = (n1 + n2 * 0.6 + n3 * 0.4) / 2.0;
-    terrainData[y * TERRAIN_W + x] = (noise > 0.08 && Math.abs(cosLat) > 0.12) ? 255 : 0;
-  }
-}
-
-// WebGL 初始化
+// ==========================================
+// 2. 顶级真实地球渲染 (Cobe 引擎)
+// ==========================================
 const canvas = document.getElementById('planet-canvas');
-const gl = canvas.getContext('webgl2', { alpha: true, antialias: true });
-if (!gl) return;
-
-const VS_SRC = `#version 300 es
-in vec2 aPos; void main() { gl_Position = vec4(aPos, 0.0, 1.0); }`;
-
-const FS_SRC = `#version 300 es
-precision highp float;
-uniform vec2 uRes; uniform float uTime; uniform sampler2D uTerrain; uniform vec2 uRot;
-out vec4 outColor;
-const float PI = 3.14159265; const float TAU = 6.28318530;
-mat2 rot2(float a) { float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
-float ringIntersection(vec3 ro, vec3 rd, vec3 normal, float radius, float thickness) {
-    float denom = dot(rd, normal);
-    if (abs(denom) < 1e-5) return 0.0;
-    float t = -dot(ro, normal) / denom;
-    if (t < 0.0) return 0.0;
-    vec3 p = ro + rd * t;
-    return smoothstep(thickness, 0.0, abs(length(p) - radius));
-}
-void main() {
-  vec2 uv = gl_FragCoord.xy / uRes;
-  vec2 p = (uv - 0.5) * 2.0;
-  p.x *= uRes.x / uRes.y;
-  float R = 0.82; float d2 = dot(p, p);
-  vec3 color = vec3(0.0);
-  vec3 ro = vec3(0.0, 0.0, 3.0); 
-  vec3 rd = normalize(vec3(p.x * 0.4, p.y * 0.4, -1.0));
-
-  vec3 ringNormal1 = normalize(vec3(0.4, 0.6, 0.2));
-  color += vec3(0.8, 0.1, 0.5) * ringIntersection(ro, rd, ringNormal1, 1.25, 0.015) * 1.5;
-  vec3 ringNormal2 = normalize(vec3(-0.3, 0.5, 0.6));
-  color += vec3(0.3, 0.5, 0.8) * ringIntersection(ro, rd, ringNormal2, 1.4, 0.01) * 0.8;
-
-  if (d2 > R * R) {
-    color += vec3(0.5, 0.2, 0.8) * exp(-(sqrt(d2) - R) * 15.0) * 0.4;
-    outColor = vec4(color, 1.0);
-    return;
-  }
-  float z = sqrt(R * R - d2);
-  vec3 normal = normalize(vec3(p, z));
-  normal.xz = rot2(uRot.x) * normal.xz;
-  normal.yz = rot2(uRot.y) * normal.yz;
-  vec2 sphereUV = vec2(atan(normal.z, normal.x) / TAU + 0.5, asin(clamp(normal.y, -1.0, 1.0)) / PI + 0.5);
-  float land = texture(uTerrain, sphereUV).r;
-  color += vec3(0.6, 0.4, 1.0) * pow(1.0 - z / R, 3.0) * 0.3; 
-
-  if (land > 0.5) {
-    vec2 grid = sphereUV * vec2(350.0, 175.0); 
-    vec2 f = fract(grid);
-    float dotMask = smoothstep(0.2, 0.1, distance(f, vec2(0.5))); 
-    float edgeFade = smoothstep(0.0, 0.3, z / R); 
-    color += vec3(1.0) * dotMask * edgeFade * 0.8; 
-  }
-  outColor = vec4(color, 1.0);
-}`;
-
-function compile(type, src) {
-  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
-  return s;
-}
-const prog = gl.createProgram();
-gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS_SRC));
-gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS_SRC));
-gl.linkProgram(prog); gl.useProgram(prog);
-
-const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
-const vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
-const aPos = gl.getAttribLocation(prog, 'aPos');
-gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-const U = {};
-['uRes','uTime','uTerrain','uRot'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
-
-const terrainTex = gl.createTexture();
-gl.bindTexture(gl.TEXTURE_2D, terrainTex);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, TERRAIN_W, TERRAIN_H, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, terrainData);
-
-// 交互逻辑
+let phi = 0;
+let theta = 0.3;
 let isDragging = false, lastX = 0, lastY = 0;
-canvas.addEventListener('pointerdown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; autoRotate = false; });
+let autoRotate = true;
+
+// 初始化引擎
+const globe = createGlobe(canvas, {
+  devicePixelRatio: 2,        // 强制 2x 高清
+  width: canvas.clientWidth * 2 || 1000,
+  height: canvas.clientHeight * 2 || 1000,
+  phi: 0,
+  theta: 0.3,
+  dark: 1,                    // 1 为暗黑背景
+  diffuse: 1.2,               // 光照效果
+  mapSamples: 40000,          // 40000个点阵，极致精细，完美勾勒真实大陆
+  mapBrightness: 6,           // 亮度
+  baseColor: [1, 1, 1],       // 纯白点阵（图1的质感）
+  markerColor: [0.2, 0.8, 1], // 标记点发光色（青蓝）
+  glowColor: [0.8, 0.8, 1],   // 地球边缘的光晕（白蓝）
+  markers: []                 // 不需要额外标记
+});
+
+// 鼠标拖拽
+canvas.addEventListener('pointerdown', (e) => {
+  isDragging = true; lastX = e.clientX; lastY = e.clientY; autoRotate = false;
+});
 canvas.addEventListener('pointermove', (e) => {
   if (!isDragging) return;
-  camera.yaw += (e.clientX - lastX) * 0.008;
-  camera.pitch = Math.max(-1.2, Math.min(1.2, camera.pitch + (e.clientY - lastY) * 0.008));
-  lastX = e.clientX; lastY = e.clientY; needsRender = true;
+  phi += (e.clientX - lastX) * 0.005;
+  theta -= (e.clientY - lastY) * 0.005;
+  theta = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, theta));
+  lastX = e.clientX; lastY = e.clientY;
 });
-window.addEventListener('pointerup', () => { isDragging = false; autoRotate = true; });
+window.addEventListener('pointerup', () => {
+  isDragging = false; autoRotate = true;
+});
 
-let needsRender = true, lastTime = performance.now(), timeAccum = 0;
+// 渲染循环
+let lastTime = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
-  const dt = Math.min((now - lastTime) / 1000, 0.05); lastTime = now; timeAccum += dt;
-  if (autoRotate && !isDragging) { camera.yaw += AUTO_ROTATE_SPEED * state.spinSpeed * dt; needsRender = true; }
-  if (needsRender) {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.max(1, Math.round(rect.width * dpr)), h = Math.max(1, Math.round(rect.height * dpr));
-    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
-    
-    gl.useProgram(prog); gl.bindVertexArray(vao);
-    gl.uniform2f(U.uRes, canvas.width, canvas.height);
-    gl.uniform1f(U.uTime, timeAccum);
-    gl.uniform2f(U.uRot, camera.yaw, camera.pitch);
-    gl.uniform1i(U.uTerrain, 0); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, terrainTex);
-    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    needsRender = false;
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+  if (autoRotate && !isDragging) {
+    phi += dt * 0.1 * state.spinSpeed; // 自转速度跟随滑杆
+  }
+  globe.update({ phi: phi, theta: theta });
+}
+requestAnimationFrame(loop);
+
+window.addEventListener('resize', () => {
+  globe.resize(canvas.clientWidth, canvas.clientHeight);
+});
+
+// ==========================================
+// 3. 面板逻辑与联动计算
+// ==========================================
+function oxygenScore(o2) {
+  if (o2 < 12) return (o2 / 12) * 0.35;
+  if (o2 < 21) return 0.6 + (o2 - 12) / 9 * 0.4;
+  if (o2 < 30) return 1.0 - (o2 - 21) / 9 * 0.25;
+  return Math.max(0.2, 0.75 - (o2 - 30) / 70 * 0.5);
+}
+
+function computeDimensions() {
+  const dims = {};
+  dims.temperature = 1 - Math.min(Math.abs(state.temperature - 15) / 100, 1);
+  dims.water = 0.72;
+  dims.atmosphere = 1 - Math.min(Math.abs(state.atmosphere - 1.0) / 3.0, 1);
+  dims.oxygen = oxygenScore(state.gases.O2);
+  dims.gravity = 1 - Math.min(Math.abs(state.gravity - 1.0) / 2.0, 1);
+  dims.radiation = 1 - state.radiation / 100;
+  dims.magnetic = Math.min(1, state.gravity * state.spinSpeed * 0.4);
+  const deltaT = 80 * (1 - Math.min(state.atmosphere / 5, 1)) * (1 - Math.min(state.spinSpeed / 3, 1) * 0.4) + 3;
+  dims.tempVariation = 1 - Math.min(deltaT / 80, 1);
+  const lightLevel = (state.temperature + 80) / 200 * (1 + state.radiation / 100);
+  dims.light = 1 - Math.min(Math.abs(lightLevel - 1.0) / 2, 1);
+  dims.geological = 0.98;
+  return dims;
+}
+
+const WEIGHTS = { temperature: 1.2, water: 1.3, atmosphere: 1.0, oxygen: 1.5, gravity: 0.9, radiation: 1.0, magnetic: 0.8, tempVariation: 0.7, light: 0.6, geological: 0.7 };
+const DIM_ORDER = ['temperature','water','atmosphere','oxygen','gravity','radiation','magnetic','tempVariation','light','geological'];
+
+function updateHabitability() {
+  const dims = computeDimensions();
+  let product = 1, sum = 0;
+  for (const key of DIM_ORDER) {
+    const w = WEIGHTS[key];
+    product *= Math.pow(Math.max(dims[key], 0.001), w);
+    sum += w;
+  }
+  const score = Math.pow(product, 1 / sum);
+  const pct = Math.round(score * 100);
+  
+  const scoreEl = document.getElementById('hab-score');
+  const tierEl = document.getElementById('hab-tier');
+  
+  if(scoreEl) scoreEl.textContent = pct;
+  if(tierEl) {
+    let color = '#ff5c5c', label = '致命 · Lethal';
+    if (score >= 0.75) { color = '#7cf0bd'; label = '宜居 · Earth-like'; }
+    else if (score >= 0.55) { color = '#e6cca6'; label = '勉强宜居 · Marginal'; }
+    else if (score >= 0.35) { color = '#ff8fd8'; label = '严酷 · Hostile'; }
+    tierEl.textContent = label;
+    tierEl.style.color = color;
+    tierEl.style.borderColor = color + '66';
+    tierEl.style.background = color + '18';
+  }
+
+  const derivedKeys = ['magnetic', 'tempVariation', 'light', 'geological'];
+  for (const key of derivedKeys) {
+    const el = document.querySelector(`[data-derived="${key}"] .dv-num`);
+    if (el) el.textContent = dims[key].toFixed(2);
   }
 }
 
-// 面板逻辑
+// ==========================================
+// 4. 滑杆与气体锁定逻辑
+// ==========================================
 function bindSlider(id, key, formatter) {
   const el = document.getElementById(id); const valEl = document.querySelector(`[data-value="${key}"]`);
-  el.addEventListener('input', (e) => { state[key] = parseFloat(e.target.value); if (valEl) valEl.textContent = formatter(state[key]); });
-  state[key] = parseFloat(el.value); if (valEl) valEl.textContent = formatter(state[key]);
+  if(!el) return;
+  el.addEventListener('input', (e) => { 
+    state[key] = parseFloat(e.target.value); 
+    if (valEl) valEl.textContent = formatter(state[key]); 
+    updateHabitability();
+  });
+  state[key] = parseFloat(el.value); 
+  if (valEl) valEl.textContent = formatter(state[key]);
 }
 bindSlider('ctrl-temperature', 'temperature', v => `${v.toFixed(0)}°C`);
 bindSlider('ctrl-atmosphere', 'atmosphere', v => `${v.toFixed(2)} atm`);
@@ -954,7 +945,12 @@ document.querySelectorAll('.lock-btn').forEach(btn => {
 
 function bindGas(key) {
   const el = document.getElementById(`gas-${key}`);
-  el.addEventListener('input', (e) => { setGas(key, parseFloat(e.target.value), el); updateGasUI(); });
+  if(!el) return;
+  el.addEventListener('input', (e) => { 
+    setGas(key, parseFloat(e.target.value), el); 
+    updateGasUI(); 
+    updateHabitability();
+  });
 }
 
 function setGas(key, value, el) {
@@ -990,18 +986,18 @@ function updateGasUI() {
     if (el) el.value = state.gases[k];
     if (valEl) valEl.textContent = `${state.gases[k].toFixed(1)}%`;
   }
-  document.getElementById('gas-sum-val').textContent = `${Object.values(state.gases).reduce((a, b) => a + b, 0).toFixed(1)}%`;
+  const sumEl = document.getElementById('gas-sum-val');
+  if (sumEl) sumEl.textContent = `${Object.values(state.gases).reduce((a, b) => a + b, 0).toFixed(1)}%`;
 }
 
 ['O2','N2','CO2','Ar'].forEach(bindGas);
 updateGasUI();
+updateHabitability();
 
-// 返回按钮直接跳转（精简版）
+// 返回主页按钮
 const btnBack = document.getElementById('btn-back');
 if (btnBack) btnBack.addEventListener('click', () => { window.location.href = 'index.html'; });
 
-requestAnimationFrame(loop);
-})();
 </script>
 </body>
 </html>
